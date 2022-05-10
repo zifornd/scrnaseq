@@ -1,0 +1,87 @@
+# Correction diagnostics
+
+Load Bioconductor package(s):
+
+```{r}
+library(batchelor)
+```
+
+Load CRAN packages:
+
+```{r}
+library(pheatmap)
+```
+
+Read experiment object:
+
+```{r}
+mnn <- readRDS("batch-correction.rds")
+```
+
+## Mixing between batches
+
+```{r}
+tab <- table(Cluser = mnn$Cluster, Batch = mnn$Batch)
+```
+
+```{r}
+out <- clusterAbundanceTest(tab)
+```
+
+```{r}
+out <- clusterAbundanceVar(tab)
+```
+
+Printing the percentage of cells in each cluster in each batch:
+
+```{r}
+percent <- t(t(tab.mnn)/colSums(tab.mnn)) * 100 
+df <- DataFrame(Batch=unclass(percent), var=rv)
+df[order(df$var, decreasing=TRUE),]
+```
+
+## Preserving biological heterogeneity
+
+## MNN-specific diagnostics
+
+Extract variance lost in each batch at each merge step:
+
+```{r}
+var <- metadata(mnn)$merge.info$lost.var
+```
+
+```{r}
+pheatmap(
+    mat = var,
+    color = "",
+    breaks = "",
+    cluster_rows = FALSE,
+    cluster_cols = FALSE,
+)
+```
+
+```{r}
+var <- apply(var, 2, cumsum)
+```
+
+```{r}
+pheatmap(
+    mat = var,
+    color = "",
+    breaks = "",
+    cluster_rows = FALSE,
+    cluster_cols = FALSE,
+)
+```
+
+Save experiment object:
+
+```{r}
+saveRDS(mnn, file = "correction-diagnostics.rds")
+```
+
+Print session information:
+
+```{r}
+sessionInfo()
+```

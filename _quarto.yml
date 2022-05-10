@@ -1,0 +1,71 @@
+project:
+  type: website
+  output-dir: docs
+  execute-dir: project
+  render:
+    - about.qmd
+    - index.qmd
+    - license.qmd
+    - analysis/data-loading.qmd
+    - analysis/droplet-processing.qmd
+    - analysis/quality-control.qmd
+    - analysis/normalization.qmd
+  execute:
+    message: false
+    warning: false
+
+website:
+  title: "Single Cell Gene Expression"
+  image: ""
+  favicon: ""
+  twitter-card: true
+  site-url: https://quarto.org
+  repo-url: https://github.com/zifornd/quarto-web
+  page-footer:
+    right:
+      - icon: twitter
+        href: https://twitter.com/zifornd
+        aria-label: Zifo Twitter
+      - icon: github
+        href: https://github.com/zifornd
+        aria-label: Zifo GitHub  
+  navbar:
+    background: light
+    logo: quarto.png
+    collapse-below: lg
+    left:
+      - text: "Overview"
+        href: index.qmd
+      - text: "Analysis"
+        menu:
+          - text: "Data loading"
+            href: analysis/data-loading.qmd
+          - text: "Droplet processing"
+            href: analysis/droplet-processing.qmd
+          - text: "Quality control"
+            href: analysis/quality-control.qmd
+          - text: "Normalization"
+            href: analysis/normalization.qmd
+      - text: "Help"
+        menu:
+          - text: "Report an Issue"
+            icon: "bug"
+          - text: "FAQ"
+            icon: "question-circle"
+    right:
+      - icon: twitter
+        href: https://twitter.com/zifornd
+        aria-label: Zifo Twitter
+      - icon: github
+        href: https://github.com/zifornd
+        aria-label: Zifo GitHub
+
+#bibliography: references.bib
+
+format:
+  html:
+    toc: true
+    theme: cosmo
+    css: styles.css
+
+editor: visual

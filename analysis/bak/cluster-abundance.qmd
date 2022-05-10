@@ -1,0 +1,49 @@
+# Differential abundance
+
+Load Bioconductor packages:
+
+```{r}
+library(edgeR)
+```
+
+Read experiment object:
+
+```{r}
+mnn <- readRDS("")
+```
+
+```{r}
+tab <- table(mnn$Cluster, mnn$Sample)
+
+mat <- unclass(tab)
+```
+
+```{r}
+extra.info <- colData(merged)[match(colnames(tab), mnn$Sample),]
+
+dge <- DGEList(mat, samples = extra.info)
+```
+
+
+```{r}
+design <- model.matrix(~factor(pool) + factor(tomato), y.ab$samples)
+```
+
+
+```{r}
+y.ab <- estimateDisp(y.ab, design, trend = "none")
+```
+
+```{r}
+fit <- glmQLFit(y.ab, design, robust = TRUE, abundance.trend = FALSE)
+```
+
+```{r}
+res <- glmQLFTest(fit, coef = ncol(design))
+```
+
+Save experiment object:
+
+```{r}
+saveRDS(mnn, file = "cluster-abundance.rds")
+```

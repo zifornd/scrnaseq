@@ -1,0 +1,75 @@
+---
+title: "Clustering"
+params:
+    # Method
+    method: "Kmeans"
+    # Number of neighbors
+    k: 10
+    # Use ANN
+    use_ann: TRUE
+    # Weighting scheme
+    type: "rank"
+    # Resolution
+    resolution_parameter: 0.5
+---
+
+```{r, child = "big-data.Rmd"}
+```
+
+Load Bioconductor package(s):
+
+```{r}
+library(bluster)
+library(scran)
+```
+
+Read experiment object(s):
+
+```{r}
+sce <- readRDS("06-reduced-dimensions.rds")
+```
+
+Specify clustering algorithm:
+
+```{r}
+BLUSP <- SNNGraphParam(
+  k = params$k,
+  type = params$type,
+  BNPARAM = KmknnParam(),
+  BPPARAM = SerialParam(),
+  cluster.fun = "leiden",
+  cluster.args = list(resolution_parameter = params$resolution_parameter)
+)
+```
+
+Cluster cells:
+
+```{r}
+col <- bpmapply(
+    FUN = clusterCells, 
+    x = sce, 
+    MoreArgs = list(
+        use.dimred = "PCA",
+        BLUSPARAM = BLUSP
+    ), 
+    SIMPLIFY = FALSE
+)
+```
+
+```{r}
+FUN <- function(x, y) { x$Cluster <- y; x }
+
+sce <- bpmapply(FUN, x = sce, y = col)
+```
+
+Save experiment object(s):
+
+```{r}
+saveRDS(sce, file = "07-clustering.rds")
+```
+
+Print session information
+
+```{r}
+sessionInfo()
+```

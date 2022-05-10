@@ -1,0 +1,112 @@
+---
+title: "Quality control"
+params:
+    # Number of MADs
+    nmads: 3
+    # Mitochondrial gene prefix
+    prefix: "MT-"
+---
+
+## Introduction
+
+## Dependencies
+
+```{r}
+#| child: "analysis/big-data.qmd"
+```
+
+Load Bioconductor package(s):
+
+```{r}
+library(scuttle)
+```
+
+Load CRAN package(s):
+
+```{r}
+library(ggplot2)
+library(scales)
+```
+
+Source project function(s):
+
+```{r}
+```
+
+Read experiment object(s):
+
+```{r}
+sce <- readRDS("output/droplet-processing.rds")
+```
+
+```{r}
+FUN <- function(x) list(mt = grep(params$prefix, rowData(x)$Symbol))
+
+mit <- bplapply(sce, FUN)
+```
+
+Per-cell quality control metrics:
+
+```{r}
+dat <- bpmapply(
+    FUN = perCellQCMetrics, 
+    x = sce, 
+    subsets = mit,
+    SIMPLIFY = FALSE
+)
+```
+
+Compute filters for low-quality cells:
+
+```{r}
+out <- bpmapply(
+    FUN = perCellQCFilters, 
+    x = dat, 
+    MoreArgs = list(sub.fields = TRUE), 
+    SIMPLIFY = FALSE
+)
+```
+
+Filter low-quality cells:
+
+```{r}
+FUN <- function(x, y) x[, !y$discard]
+
+sce <- bpmapply(FUN, x = sce, y = out, SIMPLIFY = FALSE)
+```
+
+## Summary
+
+### Parameters
+
+This table describes the parameters used in this analysis:
+
+```{r}
+par <- list(
+    list(
+        Parameter = "nmads",
+        Value = params$nmads,
+        Description = "A numeric scalar, specifying the minimum number of MADs away from median required for a value to be called an outlier."
+    ),
+    list(
+        Parameter = "prefix",
+        Value = params$prefix,
+        Description = "Mitochondrial gene prefix"
+    )
+)
+
+par <- jsonlite::toJSON(par, pretty = TRUE)
+knitr::kable(jsonlite::fromJSON(par))
+```
+
+Save experiment object(s):
+
+```{r}
+saveRDS(sce, file = "output/quality-control.rds")
+```
+
+Print session information
+
+```{r}
+sessionInfo()
+```

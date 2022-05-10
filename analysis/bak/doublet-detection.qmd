@@ -1,0 +1,71 @@
+# Doublet detection
+
+Load Bioconductor package(s):
+
+```{r}
+library(scDblFinder)
+```
+
+Load CRAN package(s):
+
+```{r}
+library(ggplot2)
+```
+
+Read experiment object(s):
+
+```{r}
+sce <- readRDS("")
+```
+
+## Doublet detection with clusters
+
+```{r}
+FUN <- function(x) {
+
+    findDoubletClusters(x, 
+        clusters = colData(x)$Cluster
+    )
+
+}
+
+dbl <- bplapply(sce, FUN, BPPARAM = BPPARAM)
+```
+
+## Doublet detection by simulation
+
+### Computing doublet densities
+
+```{r}
+FUN <- function(x) {
+
+    set.seed(100)
+
+    computeDoubletDensity(x, 
+        subset.row = rowSubset(x, "HVG"), 
+        dims = ncol(reducedDim(x, "PCA"))
+    )
+
+}
+
+dbl <- bplapply(sce, FUN, BPPARAM = BPPARAM)
+```
+
+### Doublet classification
+
+```{r}
+```
+
+## Output
+
+Save experiment object(s):
+
+```{r}
+saveRDS(sce, file = "doublet-detection.rds")
+```
+
+Print session information:
+
+```{r}
+sessionInfo()
+```

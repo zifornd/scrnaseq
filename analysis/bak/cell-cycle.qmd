@@ -1,0 +1,55 @@
+---
+title: "Cell cycle assignment"
+params:
+    organism: "mouse"
+---
+
+Load Bioconductor package(s):
+
+```{r}
+library(scran)
+```
+
+Load CRAN package(s):
+
+```{r}
+
+```
+
+Read experiment object(s):
+
+```{r}
+sce <- readRDS("object.rds")
+```
+
+
+
+```{r}
+con <- system.file("exdata", paste0(params$organism, "_cycle_markers.rds"), package = "scran")
+
+dat <- readRDS(con)
+```
+
+Cell cycle phase classification:
+
+```{r}
+out <- bplapply(X = sce, FUN = cyclone, pairs = dat)
+```
+
+Set phase label:
+
+```{r}
+for (i in names(sce)) { sce[[i]]$Phase <- out[[i]]$phases }
+```
+
+Save experiment object(s):
+
+```{r}
+saveRDS(sce, file = "cell-cycle.rds")
+```
+
+Print session information:
+
+```{r}
+sessionInfo()
+```

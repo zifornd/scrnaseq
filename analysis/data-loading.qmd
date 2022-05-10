@@ -1,0 +1,90 @@
+---
+title: "Data loading"
+params:
+    samples:
+        - "data/frozen_pbmc_donor_a_raw_gene_bc_matrices"
+        - "data/frozen_pbmc_donor_b_raw_gene_bc_matrices"
+        - "data/frozen_pbmc_donor_c_raw_gene_bc_matrices"
+    sample.names:
+        - "frozen_pbmc_donor_a"
+        - "frozen_pbmc_donor_b"
+        - "frozen_pbmc_donor_c"
+    annotation:
+        "EnsDb.Hsapiens.v86"
+---
+
+## Introduction
+
+This analysis document is used to load data from 10x Genomics experiments.
+
+## Setup
+
+Restore project dependencies:
+
+```{r}
+renv::restore()
+```
+
+Load Bioconductor package(s):
+
+```{r}
+library(DropletUtils)
+
+library(batchelor)
+library(scuttle)
+```
+
+Load gene annotation object:
+
+```{r}
+library(params$annotation, character.only = TRUE)
+ann <- eval(parse(text = params$annotation))
+```
+
+## Processing
+
+Load data from 10x Genomics experiment(s):
+
+```{r}
+sce <- read10xCounts(params$samples, sample.names = params$sample.names)
+```
+
+Make feature names unique:
+
+```{r}
+rownames(sce) <- uniquifyFeatureNames(
+  ID = rowData(sce)$ID, 
+  names = rowData(sce)$Symbol
+)
+```
+
+Get the chromosome name:
+
+```{r}
+rowData(sce)$Chrom <- mapIds(
+  x = ann, 
+  keys = rowData(sce)$ID, 
+  column = "SEQNAME", 
+  keytype = "GENEID"
+)
+```
+
+Divide object into batches:
+
+```{r}
+sce <- divideIntoBatches(sce, sce$Sample)$batches
+```
+
+## Summary
+
+Save experiment object(s):
+
+```{r}
+saveRDS(sce, file = "output/data-loading.rds")
+```
+
+Print session information
+
+```{r}
+sessionInfo()
+```

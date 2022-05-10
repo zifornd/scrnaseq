@@ -1,0 +1,85 @@
+---
+title: "Dimensionality reduction"
+params:
+    perplexity: 30
+    max_iter: 500
+    n_neighbors: 15
+    n_epochs: 500
+    min_dist: 0.01
+---
+
+```{r, child = "big-data.Rmd"}
+```
+
+Load Bioconductor package(s):
+
+```{r}
+library(scuttle)
+```
+
+Load CRAN package(s):
+
+```{r}
+library(ggplot2)
+```
+
+Read experiment object(s):
+
+```{r}
+sce <- readRDS("05-feature-selection.rds")
+```
+
+## Principal components analysis
+
+Extract highly variable genes:
+
+```{r}
+hvg <- lapply(sce, rowSubset, "HVG")
+```
+
+```{r}
+sce <- bpmapply(
+    FUN = scater::runPCA, 
+    x = sce, 
+    subset_row = hvg, 
+    MoreArgs = list(BSPARAM = BSP), 
+    BPPARAM = SerialParam()
+)
+```
+
+## t-stochastic neighbor embedding
+
+```{r}
+sce <- bplapply(
+    X = sce, 
+    FUN = scater::runTSNE, 
+    perplexity = params$perplexity, 
+    max_iter = params$max_iter, 
+    dimred = "PCA"
+)
+```
+
+## Uniform manifold approximation and projection 
+
+```{r}
+sce <- bplapply(
+    X = sce, 
+    FUN = scater::runUMAP, 
+    n_neighbors = params$n_neighbors, 
+    n_epochs = params$n_epochs, 
+    min_dist = params$min_dist, 
+    dimred = "PCA"
+)
+```
+
+Save experiment object(s):
+
+```{r}
+saveRDS(sce, file = "06-reduced-dimensions.rds")
+```
+
+Print session information
+
+```{r}
+sessionInfo()
+```

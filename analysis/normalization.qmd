@@ -1,0 +1,57 @@
+---
+title: "Normalization"
+---
+
+```{r}
+#| child: "analysis/big-data.qmd"
+```
+
+Load Bioconductor package(s):
+
+```{r}
+library(scran)
+```
+
+Read experiment object(s):
+
+```{r}
+sce <- readRDS("output/quality-control.rds")
+```
+
+Quick clustering of cells:
+
+```{r}
+col <- bplapply(
+    X = sce, 
+    FUN = quickCluster
+)
+```
+
+Normalization by deconvolution:
+
+```{r}
+sce <- bpmapply(
+    FUN = computeSumFactors, 
+    x = sce, 
+    clusters = col, 
+    SIMPLIFY = FALSE
+)
+```
+
+Compute log-normalized expression values:
+
+```{r}
+sce <- bplapply(sce, logNormCounts)
+```
+
+Save experiment object(s):
+
+```{r}
+saveRDS(sce, file = "output/normalization.rds")
+```
+
+Print session information
+
+```{r}
+sessionInfo()
+```

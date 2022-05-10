@@ -1,0 +1,89 @@
+# Cell type annotation
+
+Load Bioconductor packages:
+
+```{r}
+library(BiocFileCache)
+library(SingleR)
+library(UCell)
+```
+
+Read experiment object:
+
+```{r}
+sce <- readRDS("07-clustering.rds")[[1]]
+```
+
+## Assigning cell labels from reference data
+
+```{r}
+pred <- SingleR(test = sce, ref = ref, labels = ref$label.main)
+```
+
+
+
+## Assigning cell labels from gene sets
+
+```{r}
+```
+
+```{r}
+```
+
+## Assigning cluster labels from markers
+
+````{r}
+
+```
+
+
+
+
+
+## Computing gene set activities
+
+Download H GMT file:
+
+```{r}
+bfc <- BiocFileCache(ask = FALSE)
+
+con <- bfcrpath(bfc, "https://data.broadinstitute.org/gsea-msigdb/msigdb/release/7.5.1/h.all.v7.5.1.symbols.gmt")
+
+gmt <- getGmt(con)
+```
+
+```{r}
+scores <- ScoreSignatures_UCell(
+    matrix = counts(sce), 
+    features = geneIds(gmt), 
+    ncores = 1 
+)
+```
+
+```{r}
+alt <- SingleCellExperiment(
+    assays = list(UCell = t(scores))
+)
+
+colnames(alt) <- colnames(sce)
+
+altExp(sce, "UCell") <- alt
+```
+
+```{r}
+df <- makePerCellDF(sce)
+```
+
+## Output
+
+Save experiment object:
+
+```{r}
+saveRDS(sce, file = "cell-annotation.rds")
+```
+
+Print session information
+
+```{r}
+sessionInfo()
+```

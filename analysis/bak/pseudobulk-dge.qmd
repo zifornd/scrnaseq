@@ -1,0 +1,50 @@
+# Differential expression
+
+Load Bioconductor package(s):
+
+```{r}
+library(scran)
+```
+
+Read experiment object:
+
+```{r}
+mnn <- readRDS("")
+```
+
+```{r}
+summed <- aggregateAcrossCells(merged, id=colData(merged)[,c("celltype.mapped", "sample")])
+```
+
+Filter pseudo-bulk samples with 'insufficient' cells:
+
+```{r}
+summed.filt <- summed[, summed$ncells >= 10]
+```
+
+
+```{r}
+res <- pseudoBulkDGE(summed.filt, 
+    label = summed.filt$celltype.mapped,
+    design = ~factor(pool) + tomato,
+    coef = "tomatoTRUE",
+    condition = summed.filt$tomato 
+)
+```
+
+Decide which tests are significant for differential expression between conditions in each label:
+
+```{r}
+is.de <- decideTestsPerLabel(res, threshold = 0.05)
+```
+
+```{r}
+summarizeTestsPerLabel(is.de)
+```
+
+
+Save experiment object:
+
+```{r}
+saveRDS(mnn, file = "pseudobulk-dge.rds")
+```

@@ -1,0 +1,160 @@
+---
+title: "Droplet processing"
+params:
+    # A numeric scalar specifying the lower bound on the total UMI count, at or below which all barcodes are assumed to correspond to empty droplets.
+    lower: 100
+    # An integer scalar specifying the number of iterations to use for the Monte Carlo p-value calculations.
+    niters: 10000
+    # Numeric scalar specifying the FDR threshold
+    fdr: 0.001
+---
+
+## Setup
+
+```{r}
+#| child = "analysis/big-data.qmd"
+```
+
+Load Bioconductor package(s):
+
+```{r}
+library(DropletUtils)
+```
+
+Load CRAN package(s):
+
+```{r}
+library(patchwork)
+```
+
+Source project function(s):
+
+```{r}
+source("code/BarcodeRank.R")
+source("code/EmpDropsPValue.R")
+source("code/EmpDropsLogProb.R")
+source("code/EmpDropsLimited.R")
+```
+
+## Processing
+
+Read experiment objects(s):
+
+```{r}
+sce <- readRDS("output/data-loading.rds")
+```
+
+Compute barcode rank statistics and identify the knee and inflection points on the total count curve.
+
+```{r}
+bcr <- bplapply(
+  X = sce, 
+  FUN = barcodeRanks, 
+  lower = params$lower
+)
+```
+
+Plot barcode rank statistics and annotate the knee and inflection points on the total count curve.
+
+```{r}
+wrap_plots(lapply(bcr, BarcodeRank))
+```
+
+```{r}
+FUN <- function(x, y) {
+  
+  colData(x)$BarcodeRank = y$rank
+  colData(x)$BarcodeTotal = y$total
+  colData(x)$BarcodeFitted = y$fitted
+  return(x)
+
+}
+
+sce <- bpmapply(
+  FUN = FUN,
+  x = sce,
+  y = bcr
+)
+```
+
+### Testing barcodes
+
+Identify empty droplets:
+
+```{r}
+fit <- bplapply(
+  X = sce, 
+  FUN = emptyDrops, 
+  lower = params$lower, 
+  niters = params$niters
+)
+```
+
+```{r}
+wrap_plots(lapply(fit, EmpDropsLogProb, FDR = params$fdr))
+```
+
+### Testing ambient barcodes
+
+Identify empty droplets and return results for barcodes with total UMI count less than or equal to `r params$lower`:
+
+```{r}
+amb <- bplapply(
+  X = sce, 
+  FUN = emptyDrops, 
+  lower = params$lower, 
+  niters = params$niters, 
+  test.ambient = TRUE
+)
+```
+
+Plot distribution of the Monte Carlo p-value against the null model:
+
+```{r}
+plt <- lapply(amb, EmpDropsPValue, lower = params$lower)
+wrap_plots(plt)
+```
+
+```{r}
+FUN <- function(x, y) {
+  
+  colData(x)$EmpDropsLogProb = y$LogProb
+  colData(x)$EmpDropsPValue = y$PValue
+  colData(x)$EmpDropsLimited = y$Limited
+  colData(x)$EmpDropsFDR = y$FDR
+  return(x)
+
+}
+
+sce <- bpmapply(
+  FUN = FUN,
+  x = sce,
+  y = fit
+)
+```
+
+Filter empty droplets:
+
+```{r}
+FUN <- function(x, FDR) {
+
+  x[, which(x$EmpDropsFDR < FDR)]
+
+}
+  
+sce <- bplapply(X = sce, FUN = FUN, FDR = params$fdr)
+```
+
+## Summary
+
+Save experiment object(s):
+
+```{r}
+saveRDS(sce, file = "output/droplet-processing.rds")
+```
+
+Print session information
+
+```{r}
+sessionInfo()
+```

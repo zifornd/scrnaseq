@@ -1,0 +1,13 @@
+# Trajectory analysis
+
+Read experiment object:
+
+```{r}
+mnn <- readRDS("")
+```
+
+Save experiment object:
+
+```{r}
+saveRDS(mnn, file = "trajectory-analysis.rds")
+```

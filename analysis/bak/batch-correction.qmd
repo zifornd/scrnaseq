@@ -1,0 +1,45 @@
+---
+title: "Batch correction"
+---
+
+## 
+
+Load Bioconductor package(s):
+
+```{r}
+library(batchelor)
+```
+
+Read experiment object(s):
+
+```{r}
+sce <- readRDS("object.rds")
+```
+
+```{r}
+PARAM <- FastMnnParam(
+    BSPARAM = BSP, 
+    BNPARAM = BNP, 
+    BPPARAM = BPP
+)
+```
+
+```{r}
+dec <- lapply(sce, metadata)
+```
+
+```{r}
+mnn <- quickCorrect(sce, PARAM = PARAM, precomputed = dec)
+```
+
+Save experiment object:
+
+```{r}
+saveRDS(mnn, file = "batch-correction.rds")
+```
+
+Print session information:
+
+```{r}
+sessionInfo()
+```

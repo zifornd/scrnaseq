@@ -1,0 +1,70 @@
+---
+title: "Feature selection"
+params:
+    # Number of HVGs
+    n: 2500
+---
+
+```{r, child = c("big-data.Rmd")}
+```
+
+Load Bioconductor package(s):
+
+```{r}
+library(scran)
+```
+
+Read experiment object(s):
+
+```{r}
+sce <- readRDS("04-normalization.rds")
+```
+
+## Quantifying per-gene variation
+
+Model the per-gene variance:
+
+```{r}
+dec <- bplapply(sce, modelGeneVar, BPPARAM = BPP)
+```
+
+## Quantifying technical noise
+
+Model the per-gene variance with Poisson noise:
+
+```{r}
+dec <- bplapply(sce, modelGeneVarByPoisson, BPPARAM = BPP)
+```
+
+## Selecting highly variable genes
+
+Identify HVGs:
+
+```{r}
+hvg <- bplapply(
+    X = dec, 
+    FUN = getTopHVGs, 
+    n = params$n, 
+    BPPARAM = BPP
+)
+```
+
+Set the row subset:
+
+```{r}
+FUN <- function(x, value) { rowSubset(x, "HVG") <- value; x }
+
+sce <- bpmapply(FUN, x = sce, value = hvg, BPPARAM = BPP)
+```
+
+Save experiment object(s):
+
+```{r}
+saveRDS(sce, file = "05-feature-selection.rds")
+```
+
+Print session information:
+
+```{r}
+sessionInfo()
+```

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://quarto.org/index.html</loc>
+    <lastmod>2022-05-10T20:09:56.604Z</lastmod>
+  </url>
+  <url>
+    <loc>https://quarto.org/analysis/data-loading.html</loc>
+    <lastmod>2022-05-10T20:09:56.008Z</lastmod>
+  </url>
+  <url>
+    <loc>https://quarto.org/analysis/droplet-processing.html</loc>
+    <lastmod>2022-05-10T20:07:10.302Z</lastmod>
+  </url>
+  <url>
+    <loc>https://quarto.org/analysis/quality-control.html</loc>
+    <lastmod>2022-05-10T20:07:29.060Z</lastmod>
+  </url>
+  <url>
+    <loc>https://quarto.org/analysis/normalization.html</loc>
+    <lastmod>2022-05-10T20:08:46.354Z</lastmod>
+  </url>
+</urlset>
