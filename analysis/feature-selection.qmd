@@ -1,0 +1,62 @@
+---
+title: "Feature selection"
+params:
+    # Number of HVGs
+    n: 2500
+---
+
+```{r}
+#| child: "big-data.qmd"
+```
+
+Load Bioconductor package(s):
+
+```{r}
+library(scran)
+```
+
+Read experiment object(s):
+
+```{r}
+sce <- readRDS("output/normalization.rds")
+```
+
+Model the per-gene variance:
+
+```{r}
+dec <- bplapply(sce, modelGeneVar)
+```
+
+```{r}
+for (n in names(sce)) {
+  
+  rowData(sce[[n]])$modelGeneVar <- dec[[n]]
+  
+}
+```
+
+Identify HVGs:
+
+```{r}
+hvg <- bplapply(dec, getTopHVGs, n = params$n)
+```
+
+```{r}
+for (n in names(sce)) {
+  
+  rowSubset(sce[[n]], "HVG") <- hvg[[n]]
+  
+}
+```
+
+Save experiment object(s):
+
+```{r}
+saveRDS(sce, file = "output/feature-selection.rds")
+```
+
+Print session information:
+
+```{r}
+sessionInfo()
+```

@@ -1,0 +1,144 @@
+---
+title: "Clustering"
+params:
+    # Method
+    method: "Kmeans"
+    # Number of neighbors
+    k: 10
+    # Use ANN
+    use_ann: TRUE
+    # Weighting scheme
+    type: "rank"
+    # Resolution
+    resolution_parameter: 0.01
+---
+
+```{r}
+#| child: "big-data.qmd"
+```
+
+Load Bioconductor package(s):
+
+```{r}
+library(bluster)
+library(scran)
+```
+
+Read experiment object(s):
+
+```{r}
+sce <- readRDS("output/reduced-dimensions.rds")
+```
+
+Specify clustering algorithm:
+
+```{r}
+BLUSP <- SNNGraphParam(
+  k = params$k,
+  type = params$type,
+  BNPARAM = KmknnParam(),
+  BPPARAM = SerialParam(),
+  cluster.fun = "leiden",
+  cluster.args = list(resolution_parameter = params$resolution_parameter)
+)
+```
+
+Cluster cells:
+
+```{r}
+col <- bpmapply(
+    FUN = clusterCells, 
+    x = sce, 
+    MoreArgs = list(
+        use.dimred = "PCA",
+        BLUSPARAM = BLUSP
+    ), 
+    SIMPLIFY = FALSE
+)
+```
+
+```{r}
+for (n in names(sce)) {
+  
+  colData(sce[[n]])$Cluster <- col[[n]]
+  
+}
+```
+
+### Silhouette width
+
+```{r}
+FUN <- function(x) {
+  
+  dim <- reducedDim(x, "PCA")
+  
+  col <- colData(x)$Cluster
+  
+  approxSilhouette(x = dim, clusters = col)
+
+}
+
+sil <- bplapply(sce, FUN)
+```
+
+```{r}
+FUN <- function(x) {
+  
+  x <- as.data.frame(x)
+  
+  ggplot(x, aes(cluster, width, colour = other)) + 
+    ggbeeswarm::geom_quasirandom(method = "smiley")
+
+}
+
+plt <- bplapply(sil, FUN)
+
+wrap_plots(plt, ncol = 1)
+```
+
+## Cluster purity
+
+```{r}
+FUN <- function(x) {
+  
+  dim <- reducedDim(x, "PCA")
+  
+  col <- colData(x)$Cluster
+  
+  fit <- neighborPurity(x = dim, clusters = col)
+  
+  DataFrame(cluster = col, fit)
+
+}
+
+out <- bplapply(sce, FUN)
+```
+
+```{r}
+FUN <- function(x) {
+  
+  x <- as.data.frame(x)
+  
+  ggplot(x, aes(cluster, purity, colour = maximum)) + 
+    ggbeeswarm::geom_quasirandom(method = "smiley")
+
+}
+
+plt <- bplapply(out, FUN)
+
+wrap_plots(plt, ncol = 1)
+```
+
+## Output
+
+Save experiment object(s):
+
+```{r}
+saveRDS(sce, file = "output/clustering.rds")
+```
+
+Print session information
+
+```{r}
+sessionInfo()
+```

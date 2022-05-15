@@ -10,6 +10,11 @@ project:
     - analysis/droplet-processing.qmd
     - analysis/quality-control.qmd
     - analysis/normalization.qmd
+    - analysis/feature-selection.qmd
+    - analysis/reduced-dimensions.qmd
+    - analysis/clustering.qmd
+    - analysis/batch-correction.qmd
+    - analysis/correction-diagnostics.qmd
   execute:
     message: false
     warning: false

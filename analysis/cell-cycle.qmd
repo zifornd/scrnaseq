@@ -1,0 +1,46 @@
+---
+title: "Cell cycle assignment"
+params:
+    organism: "human"
+---
+
+## Motivation
+
+
+## Dependencies
+
+Load Bioconductor package(s):
+
+```{r}
+library(scran)
+```
+
+Source functions:
+
+```{r}
+source("code/cell-cycle")
+```
+
+Read experiment object(s):
+
+```{r}
+sce <- readRDS("output/reduced-dimensions.rds")
+```
+
+Cell cycle phase classification:
+
+```{r}
+sce <- bplapply(sce, addCellCycle)
+```
+
+Save experiment object(s):
+
+```{r}
+saveRDS(sce, file = "cell-cycle.rds")
+```
+
+Print session information:
+
+```{r}
+sessionInfo()
+```
