@@ -1,5 +1,0 @@
-Restore project dependencies:
-
-```{r}
-renv::restore()
-```
