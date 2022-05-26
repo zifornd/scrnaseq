@@ -1,90 +1,155 @@
 ---
 title: "Data loading"
+description: "Report"
 params:
-    samples:
-        - "data/frozen_pbmc_donor_a_raw_gene_bc_matrices"
-        - "data/frozen_pbmc_donor_b_raw_gene_bc_matrices"
-        - "data/frozen_pbmc_donor_c_raw_gene_bc_matrices"
-    sample.names:
-        - "frozen_pbmc_donor_a"
-        - "frozen_pbmc_donor_b"
-        - "frozen_pbmc_donor_c"
-    annotation:
-        "EnsDb.Hsapiens.v86"
+  samples: "data/samples.tsv"
+  annotation: "EnsDb.Hsapiens.v86"
+execute:
+  message: false
+  warning: false
+  echo: false
 ---
 
 ## Introduction
 
-This analysis document is used to load data from 10x Genomics experiments.
-
-## Setup
-
-Restore project dependencies:
+This section of the report lists the sample annotation table. Blah blah blah.
 
 ```{r}
-renv::restore()
-```
+# Load Bioconductor package(s)
 
-Load Bioconductor package(s):
-
-```{r}
 library(DropletUtils)
 
 library(batchelor)
 library(scuttle)
 ```
 
-Load gene annotation object:
+```{r}
+# Load CRAN package(s)
+
+library(DT)
+library(skimr)
+```
 
 ```{r}
+# Load gene annotation object
+
 library(params$annotation, character.only = TRUE)
+
 ann <- eval(parse(text = params$annotation))
 ```
 
-## Processing
+## Sample metadata
 
-Load data from 10x Genomics experiment(s):
+:::{.callout-important}
+Please check the sample annotation table is correct.
+:::
 
 ```{r}
-sce <- read10xCounts(params$samples, sample.names = params$sample.names)
+# Read sample annotation table
+
+tab <- read.delim(params$samples)
 ```
 
-Make feature names unique:
+```{r}
+# Display sample annotation table
+
+#| label: fig-samples
+#| fig-cap: Sample annotation table.
+
+datatable(tab)
+```
+
+:::{.callout-important}
+Please check the sample summary statistics are appropriate.
+:::
 
 ```{r}
+# Summarize sample annotation table
+
+#| label: fig-summary
+#| fig-cap: Sample summary table
+
+skim(tab, .data_name = "Sample annotation table")
+```
+
+```{r}
+# Load data from experiment(s)
+
+sce <- read10xCounts(tab$sample, sample.names = tab$sample.name)
+```
+
+```{r}
+# Display droplet count table
+
+#| label: fig-cells
+#| fig-cap: Droplet count table.
+
+tab <- table(sce$Sample)
+
+tab <- as.data.frame(tab)
+
+datatable(tab, colnames = c("Sample" = "Var1", "Count" = "Freq"))
+```
+
+```{r}
+# Make feature names unique
+
 rownames(sce) <- uniquifyFeatureNames(
-  ID = rowData(sce)$ID, 
+  ID = rowData(sce)$ID,
   names = rowData(sce)$Symbol
 )
 ```
 
-Get the chromosome name:
-
 ```{r}
+# Get the chromosome name
+
 rowData(sce)$Chrom <- mapIds(
-  x = ann, 
-  keys = rowData(sce)$ID, 
-  column = "SEQNAME", 
+  x = ann,
+  keys = rowData(sce)$ID,
+  column = "SEQNAME",
   keytype = "GENEID"
 )
 ```
 
-Divide object into batches:
+## Feature metadata
+
+The feature annotation table was retrieved from the `r params$annotation` package.
+
+:::{.callout-important}
+Please check the feature data is appropriate for the experiment.
+:::
 
 ```{r}
+# Display feature annotation metadata
+
+tab <- c(
+  Package  = params$annotation,
+  Genome   = unique(genome(ann)),
+  Organism = organism(ann),
+  Provider = seqlevelsStyle(ann)
+)
+
+tab <- as.data.frame(tab)
+
+datatable(
+  data = tab, 
+  options = list(
+    dom = "t", 
+    ordering = FALSE,
+    searching = FALSE
+  ), 
+  colnames = ""
+)
+```
+
+```{r}
+# Divide experiment object into batches
+
 sce <- divideIntoBatches(sce, sce$Sample)$batches
 ```
 
-## Summary
-
-Save experiment object(s):
-
 ```{r}
+# Save experiment object(s)
+
 saveRDS(sce, file = "output/data-loading.rds")
-```
-
-Print session information
-
-```{r}
-sessionInfo()
 ```
