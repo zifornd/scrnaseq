@@ -77,7 +77,7 @@ pheatmap(
 Save experiment object:
 
 ```{r}
-saveRDS(mnn, file = "correction-diagnostics.rds")
+saveRDS(mnn, file = "output/correction-diagnostics.rds")
 ```
 
 Print session information:

@@ -6,7 +6,6 @@ params:
 
 ## Motivation
 
-
 ## Dependencies
 
 Load Bioconductor package(s):
@@ -18,7 +17,7 @@ library(scran)
 Source functions:
 
 ```{r}
-source("code/cell-cycle")
+source("R/cell-cycle/")
 ```
 
 Read experiment object(s):

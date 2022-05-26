@@ -1,8 +1,15 @@
 ---
 title: "Batch correction"
+params:
+  # A factor specifying the batch of origin for each cell
+  batch: "batch"
+  # An integer vector containing the linear merge order of batches
+  merge.order: 
 ---
 
-## 
+```{r}
+#| child: "big-data.qmd"
+```
 
 Load Bioconductor package(s):
 
@@ -35,7 +42,7 @@ mnn <- quickCorrect(sce, PARAM = PARAM, precomputed = dec)
 Save experiment object:
 
 ```{r}
-saveRDS(mnn, file = "batch-correction.rds")
+saveRDS(mnn, file = "output/batch-correction.rds")
 ```
 
 Print session information:

@@ -30,15 +30,15 @@ library(patchwork)
 Source project function(s):
 
 ```{r}
-source("code/BarcodeRank.R")
-source("code/EmpDropsPValue.R")
-source("code/EmpDropsLogProb.R")
-source("code/EmpDropsLimited.R")
+source("R/dropet-processing/barcodeRanksPlot.R")
+source("R/dropet-processing/emptyDropsPValue.R")
+source("R/dropet-processing/emptyDropsLogProb.R")
+source("R/dropet-processing/emptyDropsLimited.R")
 ```
 
 ## Processing
 
-Read experiment objects(s):
+Read experiment object(s):
 
 ```{r}
 sce <- readRDS("output/data-loading.rds")
@@ -48,8 +48,8 @@ Compute barcode rank statistics and identify the knee and inflection points on t
 
 ```{r}
 bcr <- bplapply(
-  X = sce, 
-  FUN = barcodeRanks, 
+  X = sce,
+  FUN = barcodeRanks,
   lower = params$lower
 )
 ```
@@ -62,7 +62,7 @@ wrap_plots(lapply(bcr, BarcodeRank))
 
 ```{r}
 FUN <- function(x, y) {
-  
+
   colData(x)$BarcodeRank = y$rank
   colData(x)$BarcodeTotal = y$total
   colData(x)$BarcodeFitted = y$fitted
@@ -83,9 +83,9 @@ Identify empty droplets:
 
 ```{r}
 fit <- bplapply(
-  X = sce, 
-  FUN = emptyDrops, 
-  lower = params$lower, 
+  X = sce,
+  FUN = emptyDrops,
+  lower = params$lower,
   niters = params$niters
 )
 ```
@@ -100,10 +100,10 @@ Identify empty droplets and return results for barcodes with total UMI count les
 
 ```{r}
 amb <- bplapply(
-  X = sce, 
-  FUN = emptyDrops, 
-  lower = params$lower, 
-  niters = params$niters, 
+  X = sce,
+  FUN = emptyDrops,
+  lower = params$lower,
+  niters = params$niters,
   test.ambient = TRUE
 )
 ```
@@ -117,7 +117,7 @@ wrap_plots(plt)
 
 ```{r}
 FUN <- function(x, y) {
-  
+
   colData(x)$EmpDropsLogProb = y$LogProb
   colData(x)$EmpDropsPValue = y$PValue
   colData(x)$EmpDropsLimited = y$Limited
@@ -141,7 +141,7 @@ FUN <- function(x, FDR) {
   x[, which(x$EmpDropsFDR < FDR)]
 
 }
-  
+
 sce <- bplapply(X = sce, FUN = FUN, FDR = params$fdr)
 ```
 

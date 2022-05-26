@@ -1,35 +1,34 @@
-#!/usr/bin/env Rscript
+#'
+#'
+#'
+#'
+#'
+#'
+#'
+#'
 
-main <- function(input, output, params, log, threads) {
+cyclone <- function(x, organism) {
+  
+  organism <- match.arg(organism)
+  
+  filename <- switch(
+    organism, 
+    "human" = system.file("exdata", "human_cycle_markers.rds", package = "scran"),
+    "mouse" = system.file("exdata", "mouse_cycle_markers.rds", package = "scran")
+  )
+  
+  markers <- readRDS(filename)
 
-    # Log function
+  cycles <- cyclone(x, pairs = markers, gene.names = rowData(x)$ID)
+  
+  colData(x)$G1.Score <- cycles$scores$G1
+  
+  colData(x)$S.Score <- cycles$scores$S
+  
+  colData(x)$G2M.Score <- cycles$scores$G2M
+  
+  colData(x)$Phase <- cycles$phases
 
-    out <- file(log$out, open = "wt")
-
-    err <- file(log$err, open = "wt")
-
-    sink(out, type = "output")
-
-    sink(err, type = "message")
-
-    # Script function
-
-    library(BiocParallel)
-
-    library(scran)
-
-    sce <- readRDS(input$rds)
-    
-    rds <- system.file("exdata", params$rds, package = "scran")
-
-    ids <- readRDS(rds)
-
-    bpp <- MulticoreParam(workers = threads)
-
-    fit <- cyclone(sce, ids, gene.names = rowData(sce)$ID, BPPARAM = bpp)
-
-    saveRDS(fit, output$rds)
+  x
 
 }
-
-main(snakemake@input, snakemake@output, snakemake@params, snakemake@log, snakemake@threads)
