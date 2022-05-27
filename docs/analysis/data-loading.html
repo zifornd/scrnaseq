@@ -6,9 +6,10 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="description" content="Report">
+<meta name="author" content="Zifo RnD Solutions">
+<meta name="dcterms.date" content="2022-05-27">
 
-<title>Data loading</title>
+<title>Single Cell Gene Expression</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -49,21 +50,29 @@ ul.task-list{list-style: none;}
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Data loading</h1>
+<h1 class="title">Single Cell Gene Expression</h1>
+<p class="subtitle lead">Data loading</p>
 </div>
 
-<div>
-  <div class="description">
-    Report
-  </div>
-</div>
 
 
 
 
 <div class="quarto-title-meta">
 
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Zifo RnD Solutions </p>
+          </div>
+  </div>
     
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">May 27, 2022</p>
+    </div>
+  </div>
     
   </div>
   
@@ -72,13 +81,16 @@ ul.task-list{list-style: none;}
 
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
-<p>This section of the report lists the sample annotation table. Blah blah blah.</p>
+<p>This report contains the sample and feature metadata used to load and annotate the Cell Ranger output directories for 10x Genomics data.</p>
+<!-- Load Bioconductor package(s) -->
 <div class="cell">
 
 </div>
+<!-- Load CRAN package(s) -->
 <div class="cell">
 
 </div>
+<!-- Load gene annotation object -->
 <div class="cell">
 
 </div>
@@ -98,13 +110,18 @@ Important
 <p>Please check the sample annotation table is correct.</p>
 </div>
 </div>
+<!-- Read sample annotation table -->
 <div class="cell">
 
 </div>
+<!-- Display sample annotation table -->
 <div class="cell">
-<div class="cell-output-display">
-<div id="htmlwidget-d25862a9e0bb2b60af87" style="width:100%;height:auto;" class="datatables html-widget"></div>
-<script type="application/json" data-for="htmlwidget-d25862a9e0bb2b60af87">{"x":{"filter":"none","vertical":false,"data":[["1","2","3"],["frozen_pbmc_donor_a","frozen_pbmc_donor_b","frozen_pbmc_donor_c"],["data/frozen_pbmc_donor_a_raw_gene_bc_matrices","data/frozen_pbmc_donor_b_raw_gene_bc_matrices","data/frozen_pbmc_donor_c_raw_gene_bc_matrices"]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>sample.name<\/th>\n      <th>sample<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script>
+<div id="fig-samples" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<div id="htmlwidget-f9582f82e074c1ea6f79" style="width:100%;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-f9582f82e074c1ea6f79">{"x":{"filter":"none","vertical":false,"data":[["1","2","3"],["frozen_pbmc_donor_a","frozen_pbmc_donor_b","frozen_pbmc_donor_c"],["data/frozen_pbmc_donor_a_raw_gene_bc_matrices","data/frozen_pbmc_donor_b_raw_gene_bc_matrices","data/frozen_pbmc_donor_c_raw_gene_bc_matrices"]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>sample.name<\/th>\n      <th>sample<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script>
+<p></p><figcaption aria-hidden="true" class="figure-caption">Figure 1: Sample annotation table.</figcaption><p></p>
+</figure>
 </div>
 </div>
 <div class="callout-important callout callout-style-default callout-captioned">
@@ -120,8 +137,11 @@ Important
 <p>Please check the sample summary statistics are appropriate.</p>
 </div>
 </div>
+<!-- Summarize sample annotation table -->
 <div class="cell">
-<div class="cell-output-display">
+<div id="fig-summary" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<div id="fig-summary-1">
 <table class="table table-sm table-striped">
 <caption>Data summary</caption>
 <tbody>
@@ -159,6 +179,7 @@ Important
 </tr>
 </tbody>
 </table>
+</div>
 <p><strong>Variable type: character</strong></p>
 <table class="table table-sm table-striped">
 <colgroup>
@@ -206,27 +227,27 @@ Important
 </tr>
 </tbody>
 </table>
+<p></p><figcaption aria-hidden="true" class="figure-caption">Figure 2: Sample summary table</figcaption><p></p>
+</figure>
 </div>
 </div>
+<!-- Load data from experiment(s) -->
 <div class="cell">
 
 </div>
+<!-- Display droplet count table -->
 <div class="cell">
-<div class="cell-output-display">
-<div id="htmlwidget-4f7fa7f0c8c9a2f482d8" style="width:100%;height:auto;" class="datatables html-widget"></div>
-<script type="application/json" data-for="htmlwidget-4f7fa7f0c8c9a2f482d8">{"x":{"filter":"none","vertical":false,"data":[["1","2","3"],["frozen_pbmc_donor_a","frozen_pbmc_donor_b","frozen_pbmc_donor_c"],[737280,737280,1474560]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>Sample<\/th>\n      <th>Count<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"className":"dt-right","targets":2},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script>
+<div id="fig-cells" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<div id="htmlwidget-c70fddee6792ba4bc15b" style="width:100%;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-c70fddee6792ba4bc15b">{"x":{"filter":"none","vertical":false,"data":[["1","2","3"],["frozen_pbmc_donor_a","frozen_pbmc_donor_b","frozen_pbmc_donor_c"],[737280,737280,1474560]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>Sample<\/th>\n      <th>Count<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"className":"dt-right","targets":2},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script>
+<p></p><figcaption aria-hidden="true" class="figure-caption">Figure 3: Droplet count table.</figcaption><p></p>
+</figure>
 </div>
-</div>
-<div class="cell">
-
-</div>
-<div class="cell">
-
 </div>
 </section>
 <section id="feature-metadata" class="level2">
 <h2 class="anchored" data-anchor-id="feature-metadata">Feature metadata</h2>
-<p>The feature annotation table was retrieved from the EnsDb.Hsapiens.v86 package.</p>
 <div class="callout-important callout callout-style-default callout-captioned">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -240,15 +261,26 @@ Important
 <p>Please check the feature data is appropriate for the experiment.</p>
 </div>
 </div>
-<div class="cell">
-<div class="cell-output-display">
-<div id="htmlwidget-c200f84a564b2d5139c3" style="width:100%;height:auto;" class="datatables html-widget"></div>
-<script type="application/json" data-for="htmlwidget-c200f84a564b2d5139c3">{"x":{"filter":"none","vertical":false,"data":[["Package","Genome","Organism","Provider"],["EnsDb.Hsapiens.v86","GRCh38","Homo sapiens","Ensembl"]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th><\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"dom":"t","ordering":false,"searching":false,"columnDefs":[{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script>
-</div>
-</div>
+<!-- Make feature names unique -->
 <div class="cell">
 
 </div>
+<!-- Get the chromosome name -->
+<div class="cell">
+
+</div>
+<!-- Display feature annotation metadata -->
+<div class="cell">
+<div class="cell-output-display">
+<div id="htmlwidget-7396f28b144d433c3e65" style="width:100%;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-7396f28b144d433c3e65">{"x":{"filter":"none","vertical":false,"data":[["Package","Genome","Organism","Provider"],["EnsDb.Hsapiens.v86","GRCh38","Homo sapiens","Ensembl"]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th><\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"dom":"t","ordering":false,"searching":false,"columnDefs":[{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+<!-- Divide experiment object into batches -->
+<div class="cell">
+
+</div>
+<!-- Save experiment object(s) -->
 <div class="cell">
 
 </div>

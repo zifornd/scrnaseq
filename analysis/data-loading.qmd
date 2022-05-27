@@ -1,6 +1,8 @@
 ---
-title: "Data loading"
-description: "Report"
+title: "Single Cell Gene Expression"
+subtitle: "Data loading"
+author: "Zifo RnD Solutions"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
 params:
   samples: "data/samples.tsv"
   annotation: "EnsDb.Hsapiens.v86"
@@ -12,27 +14,29 @@ execute:
 
 ## Introduction
 
-This section of the report lists the sample annotation table. Blah blah blah.
+This report contains the sample and feature metadata used to load and annotate the Cell Ranger output directories for 10x Genomics data.
+
+<!-- Load Bioconductor package(s) -->
 
 ```{r}
-# Load Bioconductor package(s)
-
 library(DropletUtils)
 
 library(batchelor)
+
 library(scuttle)
 ```
 
-```{r}
-# Load CRAN package(s)
+<!-- Load CRAN package(s) -->
 
+```{r}
 library(DT)
+
 library(skimr)
 ```
 
-```{r}
-# Load gene annotation object
+<!-- Load gene annotation object -->
 
+```{r}
 library(params$annotation, character.only = TRUE)
 
 ann <- eval(parse(text = params$annotation))
@@ -44,15 +48,15 @@ ann <- eval(parse(text = params$annotation))
 Please check the sample annotation table is correct.
 :::
 
-```{r}
-# Read sample annotation table
+<!-- Read sample annotation table -->
 
+```{r}
 tab <- read.delim(params$samples)
 ```
 
-```{r}
-# Display sample annotation table
+<!-- Display sample annotation table -->
 
+```{r}
 #| label: fig-samples
 #| fig-cap: Sample annotation table.
 
@@ -63,24 +67,24 @@ datatable(tab)
 Please check the sample summary statistics are appropriate.
 :::
 
-```{r}
-# Summarize sample annotation table
+<!-- Summarize sample annotation table -->
 
+```{r}
 #| label: fig-summary
 #| fig-cap: Sample summary table
 
 skim(tab, .data_name = "Sample annotation table")
 ```
 
-```{r}
-# Load data from experiment(s)
+<!-- Load data from experiment(s) -->
 
+```{r}
 sce <- read10xCounts(tab$sample, sample.names = tab$sample.name)
 ```
 
-```{r}
-# Display droplet count table
+<!-- Display droplet count table -->
 
+```{r}
 #| label: fig-cells
 #| fig-cap: Droplet count table.
 
@@ -91,18 +95,24 @@ tab <- as.data.frame(tab)
 datatable(tab, colnames = c("Sample" = "Var1", "Count" = "Freq"))
 ```
 
-```{r}
-# Make feature names unique
+## Feature metadata
 
+:::{.callout-important}
+Please check the feature data is appropriate for the experiment.
+:::
+
+<!-- Make feature names unique -->
+
+```{r}
 rownames(sce) <- uniquifyFeatureNames(
   ID = rowData(sce)$ID,
   names = rowData(sce)$Symbol
 )
 ```
 
-```{r}
-# Get the chromosome name
+<!-- Get the chromosome name -->
 
+```{r}
 rowData(sce)$Chrom <- mapIds(
   x = ann,
   keys = rowData(sce)$ID,
@@ -111,17 +121,9 @@ rowData(sce)$Chrom <- mapIds(
 )
 ```
 
-## Feature metadata
-
-The feature annotation table was retrieved from the `r params$annotation` package.
-
-:::{.callout-important}
-Please check the feature data is appropriate for the experiment.
-:::
+<!-- Display feature annotation metadata -->
 
 ```{r}
-# Display feature annotation metadata
-
 tab <- c(
   Package  = params$annotation,
   Genome   = unique(genome(ann)),
@@ -132,24 +134,24 @@ tab <- c(
 tab <- as.data.frame(tab)
 
 datatable(
-  data = tab, 
+  data = tab,
   options = list(
-    dom = "t", 
+    dom = "t",
     ordering = FALSE,
     searching = FALSE
-  ), 
+  ),
   colnames = ""
 )
 ```
 
-```{r}
-# Divide experiment object into batches
+<!-- Divide experiment object into batches -->
 
+```{r}
 sce <- divideIntoBatches(sce, sce$Sample)$batches
 ```
 
-```{r}
-# Save experiment object(s)
+<!-- Save experiment object(s) -->
 
+```{r}
 saveRDS(sce, file = "output/data-loading.rds")
 ```
