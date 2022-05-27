@@ -1,47 +1,14 @@
-#!/usr/bin/env Rscript
+emptyDropsLimited <- function(x, FDR = 0.001) {
 
-main <- function(input, output, params, log) {
+  samples <- names(x)
 
-    # Log function
-    
-    out <- file(log$out, open = "wt")
+  limited <- lapply(x, function(x) table(x$FDR < FDR, x$Limited))
 
-    err <- file(log$err, open = "wt")
+  limited <- sapply(limited, function(x) x["FALSE", "TRUE"])
 
-    sink(out, type = "output")
-
-    sink(err, type = "message")
-
-    # Script function
-
-    library(ggplot2)
-
-    library(scales)
-
-    dat <- readRDS(input$rds)
-
-    dat <- subset(dat, !is.na(FDR))
-
-    dat <- data.frame(Limited = dat$Limited, Significant = dat$FDR < params$FDR)
-
-    col <- c("TRUE" = "#59A14F", "FALSE" = "#E15759")
-
-    lab <- c("TRUE" = "True", "FALSE" = "False")
-
-    plt <- ggplot(dat, aes(Limited, fill = Significant)) + 
-        geom_bar() + 
-        scale_fill_manual(values = col, labels = lab) + 
-        scale_x_discrete(name = "Limited", labels = lab) + 
-        scale_y_continuous(name = "Barcodes", labels = label_number_si()) + 
-        theme_bw() + 
-        theme(
-            axis.title.x = element_text(margin = unit(c(1, 0, 0, 0), "lines")), 
-            axis.title.y = element_text(margin = unit(c(0, 1, 0, 0), "lines")), 
-            legend.justification = "top"
-        )
-
-    ggsave(output$pdf, plot = plt, width = 8, height = 6, scale = 0.8)
+  data.frame(
+    Sample = samples,
+    Limited = limited
+  )
 
 }
-
-main(snakemake@input, snakemake@output, snakemake@params, snakemake@log)

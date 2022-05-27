@@ -1,79 +1,54 @@
-#!/usr/bin/env Rscript
+emptyDropsRank <- function(x, FDR = 0.001) {
 
-breaks_log10 <- function() {
+  require("ggplot2")
 
-    # Return breaks for log10 scale
-    
-    function(x) 10^seq(ceiling(log10(min(x))), ceiling(log10(max(x))))
+  require("scales")
 
-}
+  data <- as.data.frame(x)
 
-theme_custom <- function() {
+  cell <- which(data$FDR < FDR)
 
-    # Return custom theme
+  data$Droplet <- "Empty"
 
-    theme_bw() + 
-    theme(
-        axis.title.x = element_text(margin = unit(c(1, 0, 0, 0), "lines")), 
-        axis.title.y = element_text(margin = unit(c(0, 1, 0, 0), "lines")), 
-        legend.position = "top"
+  data$Droplet[cell] <- "Cell"
+
+  counts <- table(data$Droplet)
+
+  labels <- list(
+    "Cell" = sprintf("Cell (%s)", comma(counts["Cell"])),
+    "Empty" = sprintf("Empty (%s)", comma(counts["Empty"]))
+  )
+
+  colours <- list(
+    "Cell" = "#FF4466",
+    "Empty" = "#828E84"
+  )
+
+  data$Rank <- rank(-data$Total)
+
+  data <- subset(data, !duplicated(Rank))
+
+  ggplot(data, aes(Rank, Total, colour = Droplet)) +
+
+    geom_point(
+      shape = 1,
+      show.legend = TRUE
+    ) +
+
+    scale_colour_manual(
+      name = "Droplet",
+      labels = labels,
+      values = colours
+    ) +
+
+    scale_x_log10(
+      name = "Barcode Rank",
+      labels = label_number()
+    ) +
+
+    scale_y_log10(
+      name = "Total Count",
+      labels = label_number()
     )
 
 }
-
-main <- function(input, output, params, log) {
-
-    # Log function
-
-    out <- file(log$out, open = "wt")
-
-    err <- file(log$err, open = "wt")
-
-    sink(out, type = "output")
-
-    sink(err, type = "message")
-
-    # Script function
-
-    library(ggplot2)
-
-    library(scales)
-
-    dat <- readRDS(input$rds)
-
-    use <- which(dat$FDR < params$FDR)
-
-    dat$Droplet <- "Empty"
-
-    dat$Droplet[use] <- "Cell"
-
-    tab <- table(dat$Droplet)
-
-    lab <- list(
-        "Cell" = sprintf("Cell (%s)", comma(tab["Cell"])),
-        "Empty" = sprintf("Empty (%s)", comma(tab["Empty"]))
-    )
-
-    val <- list(
-        "Cell" = "#FF4466", 
-        "Empty" = "#828E84"
-    )
-
-    dat$Rank <- rank(-dat$Total)
-
-    dat <- subset(dat, !duplicated(Rank))
-
-    dat <- as.data.frame(dat)
-
-    plt <- ggplot(dat, aes(Rank, Total, colour = Droplet)) + 
-        geom_point(shape = 1, show.legend = TRUE) + 
-        scale_colour_manual(name = "Droplet", labels = lab, values = val) + 
-        scale_x_log10(name = "Barcode Rank", breaks = breaks_log10(), labels = label_number_si()) + 
-        scale_y_log10(name = "Total Count", breaks = breaks_log10(), labels = label_number_si()) + 
-        theme_custom()
-
-    ggsave(output$pdf, plot = plt, width = 8, height = 6, scale = 0.8)
-
-}
-
-main(snakemake@input, snakemake@output, snakemake@params, snakemake@log)

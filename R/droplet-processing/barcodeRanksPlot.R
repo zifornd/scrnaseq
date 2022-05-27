@@ -1,75 +1,90 @@
-#!/usr/bin/env Rscript
+barcodeRanksPlot <- function(x, lower = 100) {
 
-breaks_log10 <- function() {
+  require("ggplot2")
 
-    # Return breaks for log10 scale
-    
-    function(x) 10^seq(ceiling(log10(min(x))), ceiling(log10(max(x))))
+  require("scales")
 
-}
+  data <- as.data.frame(x)
 
-theme_custom <- function() {
+  metadata <- metadata(x)
 
-    # Return custom theme
+  labels <- list(
+    knee = sprintf("Knee = %s", comma(metadata$knee)),
+    inflection = sprintf("Inflection = %s", comma(metadata$inflection)),
+    lower = sprintf("Lower = %s", comma(lower))
+  )
 
-    theme_bw() + 
-    theme(
-        axis.title.x = element_text(margin = unit(c(1, 0, 0, 0), "lines")), 
-        axis.title.y = element_text(margin = unit(c(0, 1, 0, 0), "lines")), 
+  colours <- list(
+    knee = "#309143",
+    inflection = "#E39802",
+    lower = "#B60A1C"
+  )
+
+  data <- subset(data, !duplicated(rank))
+
+  ggplot(data, aes(rank, total)) +
+
+    geom_point(
+      shape = 1,
+      colour = "#000000"
+    ) +
+
+    geom_hline(
+      yintercept = metadata$knee,
+      colour = colours$knee,
+      linetype = "dashed"
+    ) +
+
+    geom_hline(
+      yintercept = metadata$inflection,
+      colour = colours$inflection,
+      linetype = "dashed"
+    ) +
+
+    geom_hline(
+      yintercept = lower,
+      colour = colours$lower,
+      linetype = "dashed"
+    ) +
+
+    annotate(
+      geom = "text",
+      x = 1,
+      y = metadata$knee,
+      label = labels$knee,
+      colour = colours$knee,
+      hjust = 0,
+      vjust = -1
+    ) +
+
+    annotate(
+      geom = "text",
+      x = 1,
+      y = metadata$inflection,
+      label = labels$inflection,
+      colour = colours$inflection,
+      hjust = 0,
+      vjust = -1
+    ) +
+
+    annotate(
+      geom = "text",
+      x = 1,
+      y = lower,
+      label = labels$lower,
+      colour = colours$lower,
+      hjust = 0,
+      vjust = -1
+    ) +
+
+    scale_x_log10(
+      name = "Barcode Rank",
+      labels = label_number()
+    ) +
+
+    scale_y_log10(
+      name = "Total Count",
+      labels = label_number()
     )
 
 }
-
-main <- function(input, output, log) {
-
-    # Log function
-    
-    out <- file(log$out, open = "wt")
-
-    err <- file(log$err, open = "wt")
-
-    sink(out, type = "output")
-
-    sink(err, type = "message")
-
-    # Script function
-
-    library(ggplot2)
-
-    library(scales)
-
-    bcr <- readRDS(input$rds)
-    
-    bcr <- subset(bcr, !duplicated(rank))
-
-    dat <- as.data.frame(bcr)
-
-    lab <- list(
-        knee = sprintf("Knee = %s", comma(metadata(bcr)$knee)),
-        inflection = sprintf("Inflection = %s", comma(metadata(bcr)$inflection)),
-        lower = sprintf("Lower = %s", comma(metadata(bcr)$lower))
-    )
-
-    col <- list(
-        knee = "#309143",
-        inflection = "#E39802",
-        lower = "#B60A1C"
-    )
-
-    plt <- ggplot(dat, aes(rank, total)) + 
-        geom_point(shape = 1, colour = "#000000") + 
-        geom_hline(yintercept = metadata(bcr)$knee, colour = col$knee, linetype = "dashed") + 
-        geom_hline(yintercept = metadata(bcr)$inflection, colour = col$inflection, linetype = "dashed") + 
-        geom_hline(yintercept = metadata(bcr)$lower, colour = col$lower, linetype = "dashed") + 
-        annotate("text", x = 1, y = metadata(bcr)$knee, label = lab$knee, colour = col$knee, hjust = 0, vjust = -1) +
-        annotate("text", x = 1, y = metadata(bcr)$inflection, label = lab$inflection, colour = col$inflection, hjust = 0, vjust = -1) + 
-        annotate("text", x = 1, y = metadata(bcr)$lower, label = lab$lower, colour = col$lower, hjust = 0, vjust = -1) + 
-        scale_x_log10(name = "Barcode Rank", breaks = breaks_log10(), labels = label_number_si()) + 
-        scale_y_log10(name = "Total Count", breaks = breaks_log10(), labels = label_number_si()) + 
-        theme_custom()
-
-    ggsave(output$pdf, plot = plt, width = 8, height = 6, scale = 0.8)
-
-}
-
-main(snakemake@input, snakemake@output, snakemake@log)

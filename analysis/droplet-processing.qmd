@@ -1,159 +1,226 @@
 ---
-title: "Droplet processing"
+title: "Single Cell Gene Expression"
+subtitle: "Droplet processing"
+author: "Zifo RnD Solutions"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
 params:
-    # A numeric scalar specifying the lower bound on the total UMI count, at or below which all barcodes are assumed to correspond to empty droplets.
     lower: 100
-    # An integer scalar specifying the number of iterations to use for the Monte Carlo p-value calculations.
     niters: 10000
-    # Numeric scalar specifying the FDR threshold
     fdr: 0.001
+execute:
+  message: false
+  warning: false
+  echo: false
 ---
 
-## Setup
+<!-- Include big data processing -->
 
 ```{r}
-#| child = "analysis/big-data.qmd"
+#| child: analysis/big-data.qmd
 ```
 
-Load Bioconductor package(s):
+<!-- Load Bioconductor package(s) -->
 
 ```{r}
 library(DropletUtils)
 ```
 
-Load CRAN package(s):
+<!-- Load CRAN package(s) -->
 
 ```{r}
 library(patchwork)
 ```
 
-Source project function(s):
+<!-- Source helper function(s) -->
 
 ```{r}
-source("R/dropet-processing/barcodeRanksPlot.R")
-source("R/dropet-processing/emptyDropsPValue.R")
-source("R/dropet-processing/emptyDropsLogProb.R")
-source("R/dropet-processing/emptyDropsLimited.R")
+source("R/droplet-processing/barcodeRanksData.R")
+
+source("R/droplet-processing/barcodeRanksPlot.R")
+
+source("R/droplet-processing/emptyDropsData.R")
+
+source("R/droplet-processing/emptyDropsFDR.R")
+
+source("R/droplet-processing/emptyDropsLimited.R")
+
+source("R/droplet-processing/emptyDropsLogProb.R")
+
+source("R/droplet-processing/emptyDropsPValue.R")
+
+source("R/droplet-processing/emptyDropsRank.R")
+
+source("R/droplet-processing/emptyDropsTable.R")
 ```
 
-## Processing
+<!-- Set custom theme -->
 
-Read experiment object(s):
+```{r}
+source("R/custom_theme.R")
+
+ggplot2::theme_set(custom_theme())
+```
+
+<!-- Read experiment object(s) -->
 
 ```{r}
 sce <- readRDS("output/data-loading.rds")
 ```
 
-Compute barcode rank statistics and identify the knee and inflection points on the total count curve.
+## Barcode ranks
+
+<!-- Compute barcode rank statistics -->
 
 ```{r}
-bcr <- bplapply(
-  X = sce,
-  FUN = barcodeRanks,
-  lower = params$lower
-)
+bcr <- bplapply(sce, barcodeRanks, lower = params$lower)
 ```
 
-Plot barcode rank statistics and annotate the knee and inflection points on the total count curve.
+<!-- Plot barcode rank statistics -->
 
 ```{r}
-wrap_plots(lapply(bcr, BarcodeRank))
+out <- lapply(bcr, barcodeRanksPlot, lower = params$lower)
+
+patchwork::wrap_plots(out, ncol = 2)
 ```
+
+<!-- Add barcode rank statistics to column data -->
 
 ```{r}
-FUN <- function(x, y) {
-
-  colData(x)$BarcodeRank = y$rank
-  colData(x)$BarcodeTotal = y$total
-  colData(x)$BarcodeFitted = y$fitted
-  return(x)
-
-}
-
-sce <- bpmapply(
-  FUN = FUN,
-  x = sce,
-  y = bcr
-)
+sce <- bpmapply(barcodeRanksData, x = sce, y = bcr)
 ```
 
-### Testing barcodes
+## Empty droplets
 
-Identify empty droplets:
+<!-- Identify empty droplets -->
 
 ```{r}
-fit <- bplapply(
-  X = sce,
-  FUN = emptyDrops,
-  lower = params$lower,
-  niters = params$niters
-)
+fit <- bplapply(sce, emptyDrops, lower = params$lower, niters = params$niters)
 ```
+
+<!-- Identify empty droplets with ambient testing -->
 
 ```{r}
-wrap_plots(lapply(fit, EmpDropsLogProb, FDR = params$fdr))
+amb <- bplapply(sce, emptyDrops, lower = params$lower, niters = params$niters, test.ambient = TRUE)
 ```
 
-### Testing ambient barcodes
-
-Identify empty droplets and return results for barcodes with total UMI count less than or equal to `r params$lower`:
+The table below shows the number of droplets containing cells identified by the emptyDrops algorithm using a `r params$fdr` FDR threshold.
 
 ```{r}
-amb <- bplapply(
-  X = sce,
-  FUN = emptyDrops,
-  lower = params$lower,
-  niters = params$niters,
-  test.ambient = TRUE
-)
+dat <- emptyDropsTable(fit)
+
+knitr::kable(dat)
 ```
 
-Plot distribution of the Monte Carlo p-value against the null model:
+The table below shows how many droplets were limited by the number of iterations used for the Monte Carlo p-value calculations by the emptyDrops algorithm.
 
 ```{r}
-plt <- lapply(amb, EmpDropsPValue, lower = params$lower)
-wrap_plots(plt)
+dat <- emptyDropsLimited(fit)
+
+knitr::kable(dat)
 ```
+
+::: {.panel-tabset}
+
+### LogProb
+
+<!-- Plot droplet log probability -->
 
 ```{r}
-FUN <- function(x, y) {
+out <- lapply(fit, emptyDropsLogProb, FDR = params$fdr)
 
-  colData(x)$EmpDropsLogProb = y$LogProb
-  colData(x)$EmpDropsPValue = y$PValue
-  colData(x)$EmpDropsLimited = y$Limited
-  colData(x)$EmpDropsFDR = y$FDR
-  return(x)
-
-}
-
-sce <- bpmapply(
-  FUN = FUN,
-  x = sce,
-  y = fit
-)
+patchwork::wrap_plots(out, ncol = 2)
 ```
 
-Filter empty droplets:
+### Rank
+
+<!-- Plot droplet rank -->
 
 ```{r}
-FUN <- function(x, FDR) {
+out <- lapply(fit, emptyDropsRank, FDR = params$fdr)
 
-  x[, which(x$EmpDropsFDR < FDR)]
-
-}
-
-sce <- bplapply(X = sce, FUN = FUN, FDR = params$fdr)
+patchwork::wrap_plots(out, ncol = 2)
 ```
 
-## Summary
+### PValue
 
-Save experiment object(s):
+<!-- Plot ambient P value -->
+
+```{r}
+out <- lapply(amb, emptyDropsPValue, lower = params$lower)
+
+patchwork::wrap_plots(out, ncol = 2)
+```
+
+:::
+
+<!-- Add empty droplet statistics to column data -->
+
+```{r}
+sce <- bpmapply(emptyDropsData, x = sce, y = fit)
+```
+
+<!-- Filter droplets by FDR threshold -->
+
+```{r}
+sce <- bplapply(sce, emptyDropsFDR, FDR = params$fdr)
+```
+
+<!-- Save experiment object(s) -->
 
 ```{r}
 saveRDS(sce, file = "output/droplet-processing.rds")
 ```
 
-Print session information
+## Summary
+
+### Parameters
+
+This table shows the parameters used to process the data.
+
+```{r}
+par <- list(
+  list(
+    Parameter = "lower",
+    Value = params$lower,
+    Description = "A numeric scalar specifying the lower bound on the total UMI count, at or below which all barcodes are assumed to correspond to empty droplets."
+  ),
+  list(
+    Parameter = "niters",
+    Value = params$niters,
+    Description = "An integer scalar specifying the number of iterations to use for the Monte Carlo p-value calculations."
+  ),
+  list(
+    Parameter = "fdr",
+    Value = params$fdr,
+    Description = "Barcode FDR threshold"
+  )
+)
+
+par <- jsonlite::toJSON(par, pretty = TRUE)
+
+knitr::kable(jsonlite::fromJSON(par))
+```
+
+### Output files
+
+This table provides links to the processed output files.
+
+```{r}
+out <- list(
+  list(
+    File = "droplet-processing.rds",
+    Description = "A list of SingleCellExperiment objects."
+  )
+)
+
+out <- jsonlite::toJSON(out, pretty = TRUE)
+
+knitr::kable(jsonlite::fromJSON(out))
+```
+
+### Session information
+
+This output lists version information about R, the OS and attached or loaded packages.
 
 ```{r}
 sessionInfo()
