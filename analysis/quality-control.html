@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-0.9.347">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Zifo RnD Solutions">
+<meta name="dcterms.date" content="2022-06-08">
+
+<title>Single Cell Gene Expression</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+<script src="quality-control_files/libs/clipboard/clipboard.min.js"></script>
+<script src="quality-control_files/libs/quarto-html/quarto.js"></script>
+<script src="quality-control_files/libs/quarto-html/popper.min.js"></script>
+<script src="quality-control_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="quality-control_files/libs/quarto-html/anchor.min.js"></script>
+<link href="quality-control_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link id="quarto-text-highlighting-styles" href="quality-control_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet">
+<script src="quality-control_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="quality-control_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="quality-control_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Single Cell Gene Expression</h1>
+<p class="subtitle lead">Quality control</p>
+</div>
+
+
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Zifo RnD Solutions </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">June 8, 2022</p>
+    </div>
+  </div>
+    
+  </div>
+  
+
+</header>
+
+<!-- <!-- Include big data processing -->
+<p>–&gt;</p>
+<!-- ```{r} -->
+<!-- #| child: "analysis/big-data.qmd" -->
+<!-- ``` -->
+<!-- <!-- Load Bioconductor package(s) -->
+<p>–&gt;</p>
+<!-- ```{r} -->
+<!-- library(scuttle) -->
+<!-- ``` -->
+<!-- <!-- Load CRAN package(s) -->
+<p>–&gt;</p>
+<!-- ```{r} -->
+<!-- library(ggforce) -->
+<!-- library(ggplot2) -->
+<!-- library(scales) -->
+<!-- ``` -->
+<!-- <!-- Source helper function(s) -->
+<p>–&gt;</p>
+<!-- ```{r} -->
+<!-- source("R/quality-control/addPerCellQCFilters.R") -->
+<!-- ``` -->
+<!-- <!-- Read experiment object(s) -->
+<p>–&gt;</p>
+<!-- ```{r} -->
+<!-- sce <- readRDS("output/droplet-processing.rds") -->
+<!-- ``` -->
+<!-- <!-- Get indices of MT features -->
+<p>–&gt;</p>
+<!-- ```{r} -->
+<!-- ind <- bplapply(sce, function(x) { -->
+<!--   list( -->
+<!--     mt = grep(params$mitochondria, rowData(x)$Symbol), -->
+<!--     rp = grep(params$ribosome, rowData(x)$Symbol) -->
+<!--   ) -->
+<!-- }) -->
+<!-- ``` -->
+<!-- <!-- Add QC metrics to experiment object(s) -->
+<p>–&gt;</p>
+<!-- ```{r} -->
+<!-- sce <- bpmapply(addPerCellQCMetrics, x = sce, subsets = ind, SIMPLIFY = FALSE) -->
+<!-- ``` -->
+<!-- <!-- Add QC filters to experiment object(s) -->
+<p>–&gt;</p>
+<!-- ```{r} -->
+<!-- sce <- bpmapply(addPerCellQCFilters, x = sce, sub.fields = "subsets_mt_percent", SIMPLIFY = FALSE) -->
+<!-- ``` -->
+<!-- <!-- Create a per-cell data frame -->
+<p>–&gt;</p>
+<!-- ```{r} -->
+<!-- dat <- do.call(rbind, bplapply(sce, makePerCellDF)) -->
+<!-- ``` -->
+<!-- ## Inter-sample quality metrics -->
+<!-- ### Total counts -->
+<!-- ```{r} -->
+<!-- ggplot(dat, aes(x = Sample, y = sum, colour = discard, group = Sample)) + -->
+<!--   geom_sina(scale = "count") + -->
+<!--   scale_colour_manual( -->
+<!--     name = "Quality", -->
+<!--     values = c("TRUE" = "#ef8a62", "FALSE" = "#67a9cf"), -->
+<!--     labels = c("TRUE" = "Low", "FALSE" = "High") -->
+<!--   ) + -->
+<!--   scale_y_log10(labels = label_number(big.mark = ",")) + -->
+<!--   labs(x = "Sample", y = "Counts") + -->
+<!--   theme_minimal() -->
+<!-- ``` -->
+<!-- ### Total features -->
+<!-- ```{r} -->
+<!-- ggplot(dat, aes(x = Sample, y = detected, colour = discard, group = Sample)) + -->
+<!--   geom_sina(scale = "count") + -->
+<!--   scale_colour_manual( -->
+<!--     name = "Quality", -->
+<!--     values = c("TRUE" = "#ef8a62", "FALSE" = "#67a9cf"), -->
+<!--     labels = c("TRUE" = "Low", "FALSE" = "High") -->
+<!--   ) + -->
+<!--   scale_y_log10(labels = label_number(big.mark = ",")) + -->
+<!--   labs(x = "Sample", y = "Features") + -->
+<!--   theme_minimal() + -->
+<!--   theme(legend.position = "top") -->
+<!-- ``` -->
+<!-- ### Mitochondrial proportion -->
+<!-- ```{r} -->
+<!-- ggplot(dat, aes(x = Sample, y = subsets_mt_percent, colour = discard, group = Sample)) + -->
+<!--   geom_sina(scale = "count") + -->
+<!--   scale_colour_manual( -->
+<!--     name = "Quality", -->
+<!--     values = c("TRUE" = "#ef8a62", "FALSE" = "#67a9cf"), -->
+<!--     labels = c("TRUE" = "Low", "FALSE" = "High") -->
+<!--   ) + -->
+<!--   labs(x = "Sample", y = "MT Proportion") + -->
+<!--   scale_y_continuous(labels = label_percent(scale = 1)) + -->
+<!--   theme_minimal() + -->
+<!--   theme(legend.position = "top") -->
+<!-- ``` -->
+<!-- ### Ribosomal proportion -->
+<!-- ```{r} -->
+<!-- #|  -->
+<!-- ggplot(dat, aes(x = Sample, y = subsets_rp_percent, colour = discard, group = Sample)) + -->
+<!--   geom_sina(scale = "count") + -->
+<!--   scale_colour_manual( -->
+<!--     name = "Quality", -->
+<!--     values = c("TRUE" = "#ef8a62", "FALSE" = "#67a9cf"), -->
+<!--     labels = c("TRUE" = "Low", "FALSE" = "High") -->
+<!--   ) + -->
+<!--   labs(x = "Sample", y = "RP Proportion") + -->
+<!--   scale_y_continuous(labels = label_percent(scale = 1)) + -->
+<!--   theme_minimal() + -->
+<!--   theme(legend.position = "top") -->
+<!-- ``` -->
+<!-- <!-- Save experiment object(s) -->
+<p>–&gt;</p>
+<!-- ```{r} -->
+<!-- saveRDS(sce, file = "output/quality-control.rds") -->
+<!-- ``` -->
+<!-- ## Summary -->
+<!-- ### Parameters -->
+<!-- This table describes the parameters used to process the data. -->
+<!-- ```{r} -->
+<!-- par <- list( -->
+<!--   list( -->
+<!--     Parameter = "nmads", -->
+<!--     Value = params$nmads, -->
+<!--     Description = "A numeric scalar, specifying the minimum number of MADs away from median required for a value to be called an outlier." -->
+<!--   ), -->
+<!--   list( -->
+<!--     Parameter = "prefix", -->
+<!--     Value = params$prefix, -->
+<!--     Description = "Mitochondrial gene prefix" -->
+<!--   ) -->
+<!-- ) -->
+<!-- par <- jsonlite::toJSON(par, pretty = TRUE) -->
+<!-- knitr::kable(jsonlite::fromJSON(par)) -->
+<!-- ``` -->
+<!-- ### Output files -->
+<!-- This table provides links to the processed output files. -->
+<!-- ```{r} -->
+<!-- out <- list( -->
+<!--   list( -->
+<!--     File = "droplet-processing.rds", -->
+<!--     Description = "A list of SingleCellExperiment objects." -->
+<!--   ) -->
+<!-- ) -->
+<!-- out <- jsonlite::toJSON(out, pretty = TRUE) -->
+<!-- knitr::kable(jsonlite::fromJSON(out)) -->
+<!-- ``` -->
+<!-- ### Session information -->
+<!-- This output lists version information about R, the OS and attached or loaded packages. -->
+<!-- ```{r} -->
+<!-- sessionInfo() -->
+<!-- ``` -->
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    setTimeout(function() {
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      let href = ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const cites = ref.parentNode.getAttribute('data-cites').split(' ');
+    tippyHover(ref, function() {
+      var popup = window.document.createElement('div');
+      cites.forEach(function(cite) {
+        var citeDiv = window.document.createElement('div');
+        citeDiv.classList.add('hanging-indent');
+        citeDiv.classList.add('csl-entry');
+        var biblioDiv = window.document.getElementById('ref-' + cite);
+        if (biblioDiv) {
+          citeDiv.innerHTML = biblioDiv.innerHTML;
+        }
+        popup.appendChild(citeDiv);
+      });
+      return popup.innerHTML;
+    });
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

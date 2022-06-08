@@ -1,111 +1,195 @@
 ---
-title: "Quality control"
+title: "Single Cell Gene Expression"
+subtitle: "Quality control"
+author: "Zifo RnD Solutions"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
 params:
-    # Number of MADs
-    nmads: 3
-    # Mitochondrial gene prefix
-    prefix: "MT-"
+  nmads: 3
+  mitochondria: "^MT-"
+  ribosome: "^RP[SL]\\d+"
+execute:
+  message: false
+  warning: false
+  echo: false
 ---
 
-## Introduction
-
-## Dependencies
+<!-- Include big data processing -->
 
 ```{r}
 #| child: "analysis/big-data.qmd"
 ```
 
-Load Bioconductor package(s):
+<!-- Load Bioconductor package(s) -->
 
 ```{r}
 library(scuttle)
 ```
 
-Load CRAN package(s):
+<!-- Load CRAN package(s) -->
 
 ```{r}
+library(ggforce)
 library(ggplot2)
 library(scales)
 ```
 
-Source project function(s):
+<!-- Source helper function(s) -->
 
 ```{r}
+source("R/quality-control/addPerCellQCFilters.R")
 ```
 
-Read experiment object(s):
+<!-- Read experiment object(s) -->
 
 ```{r}
 sce <- readRDS("output/droplet-processing.rds")
 ```
 
-```{r}
-FUN <- function(x) list(mt = grep(params$prefix, rowData(x)$Symbol))
+<!-- Get indices of MT features -->
 
-mit <- bplapply(sce, FUN)
+```{r}
+ind <- bplapply(sce, function(x) {
+  list(
+    mt = grep(params$mitochondria, rowData(x)$Symbol),
+    rp = grep(params$ribosome, rowData(x)$Symbol)
+  )
+})
 ```
 
-Per-cell quality control metrics:
+<!-- Add QC metrics to experiment object(s) -->
 
 ```{r}
-dat <- bpmapply(
-    FUN = perCellQCMetrics, 
-    x = sce, 
-    subsets = mit,
-    SIMPLIFY = FALSE
-)
+sce <- bpmapply(addPerCellQCMetrics, x = sce, subsets = ind, SIMPLIFY = FALSE)
 ```
 
-Compute filters for low-quality cells:
+<!-- Add QC filters to experiment object(s) -->
 
 ```{r}
-out <- bpmapply(
-    FUN = perCellQCFilters, 
-    x = dat, 
-    MoreArgs = list(sub.fields = TRUE), 
-    SIMPLIFY = FALSE
-)
+sce <- bpmapply(addPerCellQCFilters, x = sce, sub.fields = "subsets_mt_percent", SIMPLIFY = FALSE)
 ```
 
-Filter low-quality cells:
+<!-- Create a per-cell data frame -->
 
 ```{r}
-FUN <- function(x, y) x[, !y$discard]
+dat <- do.call(rbind, bplapply(sce, makePerCellDF))
+```
 
-sce <- bpmapply(FUN, x = sce, y = out, SIMPLIFY = FALSE)
+## Inter-sample quality metrics
+
+### Total counts
+
+```{r}
+ggplot(dat, aes(x = Sample, y = sum, colour = discard, group = Sample)) +
+  geom_sina(scale = "count") +
+  scale_colour_manual(
+    name = "Quality",
+    values = c("TRUE" = "#ef8a62", "FALSE" = "#67a9cf"),
+    labels = c("TRUE" = "Low", "FALSE" = "High")
+  ) +
+  scale_y_log10(labels = label_number(big.mark = ",")) +
+  labs(x = "Sample", y = "Counts") +
+  theme_minimal()
+```
+
+### Total features
+
+```{r}
+ggplot(dat, aes(x = Sample, y = detected, colour = discard, group = Sample)) +
+  geom_sina(scale = "count") +
+  scale_colour_manual(
+    name = "Quality",
+    values = c("TRUE" = "#ef8a62", "FALSE" = "#67a9cf"),
+    labels = c("TRUE" = "Low", "FALSE" = "High")
+  ) +
+  scale_y_log10(labels = label_number(big.mark = ",")) +
+  labs(x = "Sample", y = "Features") +
+  theme_minimal() +
+  theme(legend.position = "top")
+```
+
+### Mitochondrial proportion
+
+```{r}
+ggplot(dat, aes(x = Sample, y = subsets_mt_percent, colour = discard, group = Sample)) +
+  geom_sina(scale = "count") +
+  scale_colour_manual(
+    name = "Quality",
+    values = c("TRUE" = "#ef8a62", "FALSE" = "#67a9cf"),
+    labels = c("TRUE" = "Low", "FALSE" = "High")
+  ) +
+  labs(x = "Sample", y = "MT Proportion") +
+  scale_y_continuous(labels = label_percent(scale = 1)) +
+  theme_minimal() +
+  theme(legend.position = "top")
+```
+
+### Ribosomal proportion
+
+```{r}
+#|
+
+ggplot(dat, aes(x = Sample, y = subsets_rp_percent, colour = discard, group = Sample)) +
+  geom_sina(scale = "count") +
+  scale_colour_manual(
+    name = "Quality",
+    values = c("TRUE" = "#ef8a62", "FALSE" = "#67a9cf"),
+    labels = c("TRUE" = "Low", "FALSE" = "High")
+  ) +
+  labs(x = "Sample", y = "RP Proportion") +
+  scale_y_continuous(labels = label_percent(scale = 1)) +
+  theme_minimal() +
+  theme(legend.position = "top")
+```
+
+<!-- Save experiment object(s) -->
+
+```{r}
+saveRDS(sce, file = "output/quality-control.rds")
 ```
 
 ## Summary
 
 ### Parameters
 
-This table describes the parameters used in this analysis:
+This table describes the parameters used to process the data.
 
 ```{r}
 par <- list(
-    list(
-        Parameter = "nmads",
-        Value = params$nmads,
-        Description = "A numeric scalar, specifying the minimum number of MADs away from median required for a value to be called an outlier."
-    ),
-    list(
-        Parameter = "prefix",
-        Value = params$prefix,
-        Description = "Mitochondrial gene prefix"
-    )
+  list(
+    Parameter = "nmads",
+    Value = params$nmads,
+    Description = "A numeric scalar, specifying the minimum number of MADs away from median required for a value to be called an outlier."
+  ),
+  list(
+    Parameter = "prefix",
+    Value = params$prefix,
+    Description = "Mitochondrial gene prefix"
+  )
 )
 
 par <- jsonlite::toJSON(par, pretty = TRUE)
+
 knitr::kable(jsonlite::fromJSON(par))
 ```
 
-Save experiment object(s):
+### Output files
+
+This table provides links to the processed output files.
 
 ```{r}
-saveRDS(sce, file = "output/quality-control.rds")
+out <- list(
+  list(
+    File = "droplet-processing.rds",
+    Description = "A list of SingleCellExperiment objects."
+  )
+)
+out <- jsonlite::toJSON(out, pretty = TRUE)
+knitr::kable(jsonlite::fromJSON(out))
 ```
 
-Print session information
+### Session information
+
+This output lists version information about R, the OS and attached or loaded packages.
 
 ```{r}
 sessionInfo()
