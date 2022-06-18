@@ -5,8 +5,8 @@ author: "Zifo RnD Solutions"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 params:
   nmads: 3
-  mitochondria: "^MT-"
-  ribosome: "^RP[SL]\\d+"
+  mito: "^MT-"
+  ribo: "^RP[SL]\\d+"
 execute:
   message: false
   warning: false
@@ -22,6 +22,7 @@ execute:
 <!-- Load Bioconductor package(s) -->
 
 ```{r}
+library(scater)
 library(scuttle)
 ```
 
@@ -37,6 +38,8 @@ library(scales)
 
 ```{r}
 source("R/quality-control/addPerCellQCFilters.R")
+source("R/quality-control/panelTabset.R")
+source("R/quality-control/plotPerCellQCMetrics.R")
 ```
 
 <!-- Read experiment object(s) -->
@@ -45,13 +48,13 @@ source("R/quality-control/addPerCellQCFilters.R")
 sce <- readRDS("output/droplet-processing.rds")
 ```
 
-<!-- Get indices of MT features -->
+<!-- Get indices of MT and RP features -->
 
 ```{r}
-ind <- bplapply(sce, function(x) {
+ind <- lapply(sce, function(x) {
   list(
-    mt = grep(params$mitochondria, rowData(x)$Symbol),
-    rp = grep(params$ribosome, rowData(x)$Symbol)
+    mt = grep(params$mito, rowData(x)$Symbol),
+    rp = grep(params$ribo, rowData(x)$Symbol)
   )
 })
 ```
@@ -59,26 +62,64 @@ ind <- bplapply(sce, function(x) {
 <!-- Add QC metrics to experiment object(s) -->
 
 ```{r}
-sce <- bpmapply(addPerCellQCMetrics, x = sce, subsets = ind, SIMPLIFY = FALSE)
+sce <- mapply(addPerCellQCMetrics, x = sce, subsets = ind, SIMPLIFY = FALSE)
 ```
 
 <!-- Add QC filters to experiment object(s) -->
 
 ```{r}
-sce <- bpmapply(addPerCellQCFilters, x = sce, sub.fields = "subsets_mt_percent", SIMPLIFY = FALSE)
+sce <- mapply(addPerCellQCFilters, x = sce, sub.fields = "subsets_mt_percent", SIMPLIFY = FALSE)
 ```
 
-<!-- Create a per-cell data frame -->
+## Quality metrics
+
+### Within-sample
+
+::: {.panel-tabset}
 
 ```{r}
-dat <- do.call(rbind, bplapply(sce, makePerCellDF))
+#| results: "asis"
+#| fig.align: "center"
+#| fig.height: 20
+
+panelTabset(sce, plotPerCellQCMetrics, level = "####")
 ```
 
-## Inter-sample quality metrics
+:::
 
-### Total counts
+### Between-sample
+
+<!-- Create per-cell data frame -->
 
 ```{r}
+dat <- lapply(sce, makePerCellDF)
+
+dat <- do.call(rbind, dat)
+```
+
+@tbl-quality-summary Displays a cross table of summary statistics for each sample.
+
+```{r}
+#| label: tbl-quality-summary
+#| tbl-cap: "Quality summary"
+
+tbl <- data.frame(Sample = dat$Sample, Quality = ifelse(dat$discard, "Low", "High"))
+
+tbl <- gtsummary::tbl_cross(tbl, row = Sample, col = Quality, percent = "row")
+
+tbl <- gtsummary::bold_labels(tbl)
+
+tbl
+```
+
+#### Total counts
+
+@fig-total-counts displays the distribution of the per-cell counts for each sample coloured by the quality assignment.
+
+```{r}
+#| label: fig-total-counts
+#| fig-cap: Per-cell counts coloured by quality.
+
 ggplot(dat, aes(x = Sample, y = sum, colour = discard, group = Sample)) +
   geom_sina(scale = "count") +
   scale_colour_manual(
@@ -91,9 +132,14 @@ ggplot(dat, aes(x = Sample, y = sum, colour = discard, group = Sample)) +
   theme_minimal()
 ```
 
-### Total features
+#### Total features
+
+@fig-total-features displays the distribution of the per-cell features for each sample coloured by the quality assignment.
 
 ```{r}
+#| label: fig-total-features
+#| fig-cap: Per-cell features coloured by quality.
+
 ggplot(dat, aes(x = Sample, y = detected, colour = discard, group = Sample)) +
   geom_sina(scale = "count") +
   scale_colour_manual(
@@ -107,9 +153,14 @@ ggplot(dat, aes(x = Sample, y = detected, colour = discard, group = Sample)) +
   theme(legend.position = "top")
 ```
 
-### Mitochondrial proportion
+#### Mitochondrial proportion
+
+@fig-mito-prop displays the distribution of the per-cell MT proportion for each sample coloured by the quality assignment.
 
 ```{r}
+#| label: fig-mito-prop
+#| fig-cap: Per-cell MT proportion coloured by quality.
+
 ggplot(dat, aes(x = Sample, y = subsets_mt_percent, colour = discard, group = Sample)) +
   geom_sina(scale = "count") +
   scale_colour_manual(
@@ -123,10 +174,13 @@ ggplot(dat, aes(x = Sample, y = subsets_mt_percent, colour = discard, group = Sa
   theme(legend.position = "top")
 ```
 
-### Ribosomal proportion
+#### Ribosomal proportion
+
+@fig-ribo-prop displays the distribution of the per-cell RP proportion for each sample coloured by the quality assignment.
 
 ```{r}
-#|
+#| label: fig-ribo-prop
+#| fig-cap: Per-cell RP proportion coloured by quality.
 
 ggplot(dat, aes(x = Sample, y = subsets_rp_percent, colour = discard, group = Sample)) +
   geom_sina(scale = "count") +
@@ -161,9 +215,14 @@ par <- list(
     Description = "A numeric scalar, specifying the minimum number of MADs away from median required for a value to be called an outlier."
   ),
   list(
-    Parameter = "prefix",
-    Value = params$prefix,
-    Description = "Mitochondrial gene prefix"
+    Parameter = "mito",
+    Value = params$mito,
+    Description = "Mitochondrial gene symbol pattern"
+  ),
+  list(
+    Parameter = "ribo",
+    Value = params$ribo,
+    Description = "Ribosomal gene symbol pattern"
   )
 )
 
@@ -189,7 +248,7 @@ knitr::kable(jsonlite::fromJSON(out))
 
 ### Session information
 
-This output lists version information about R, the OS and attached or loaded packages.
+Version information about R, the OS and attached or loaded packages.
 
 ```{r}
 sessionInfo()

@@ -3,7 +3,7 @@
 ```{r}
 library(BiocNeighbors)
 
-BNPARAM <- AnnoyParam()
+BNP <- AnnoyParam()
 ```
 
 <!-- Singular value decomposition -->
@@ -11,7 +11,7 @@ BNPARAM <- AnnoyParam()
 ```{r}
 library(BiocSingular)
 
-BSPARAM <- RandomParam()
+BSP <- RandomParam()
 ```
 
 <!-- Parallel evaluation -->
@@ -19,5 +19,5 @@ BSPARAM <- RandomParam()
 ```{r}
 library(BiocParallel)
 
-BPPARAM <- SerialParam()
+BPP <- SerialParam()
 ```
