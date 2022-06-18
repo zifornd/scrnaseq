@@ -8,3 +8,4 @@ project:
     - analysis/droplet-processing.qmd
     - analysis/quality-control.qmd
     - analysis/normalization.qmd
+    - analysis/feature-selection.qmd

@@ -1,61 +1,146 @@
 ---
-title: "Feature selection"
+title: "Single Cell Gene Expression"
+subtitle: "Feature selection"
+author: "Zifo RnD Solutions"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
 params:
     # Number of HVGs
     n: 2500
+execute:
+  message: false
+  warning: false
+  echo: false
 ---
 
+## Overview
+
+This report contains results from the feature selection step of the Single Cell Gene Expression workflow.
+
+> "Feature selection identifies genes with the strongest biological signal relative to the technical noise. By restricting downstream analysis to the most informative genes, the effect of dimensionality is diminished, noise is reduced and the analysis is simplified."
+
+<!-- Include big data parameters -->
+
 ```{r}
-#| child: "big-data.qmd"
+#| child: "analysis/big-data.qmd"
 ```
 
-Load Bioconductor package(s):
+<!-- Load Bioconductor packages -->
 
 ```{r}
 library(scran)
 ```
 
-Read experiment object(s):
+<!-- Source custom functions -->
+
+```{r}
+source("R/utils/panelTabset.R")
+source("R/utils/wrapPlots.R")
+source("R/feature-selection/plotGeneVarByPoisson.R")
+```
+
+<!-- Read experiment objects -->
 
 ```{r}
 sce <- readRDS("output/normalization.rds")
 ```
 
-Model the per-gene variance:
+<!-- Model the per-gene variance with Poisson noise -->
 
 ```{r}
-dec <- bplapply(sce, modelGeneVar)
+dec <- bplapply(sce, modelGeneVarByPoisson, BPPARAM = BPP)
 ```
+
+<!-- Add per-gene variance statistics to row data -->
 
 ```{r}
-for (n in names(sce)) {
-  
-  rowData(sce[[n]])$modelGeneVar <- dec[[n]]
-  
-}
+for (n in names(sce)) { rowData(sce[[n]])$modelGeneVarByPoisson <- dec[[n]] }
 ```
 
-Identify HVGs:
+<!-- Identify highly-variable genes -->
 
 ```{r}
 hvg <- bplapply(dec, getTopHVGs, n = params$n)
 ```
 
+<!-- Add HVG to row data -->
+
 ```{r}
-for (n in names(sce)) {
-  
-  rowSubset(sce[[n]], "HVG") <- hvg[[n]]
-  
-}
+for (n in names(sce)) { rowSubset(sce[[n]], "HVG") <- hvg[[n]] }
 ```
 
-Save experiment object(s):
+<!-- Save experiment objects -->
 
 ```{r}
 saveRDS(sce, file = "output/feature-selection.rds")
 ```
 
-Print session information:
+## Highly variable genes
+
+Model the variance of the log-expression profiles for each gene, decomposing it into technical and biological components based on a mean-variance trend corresponding to Poisson noise.
+
+Figure 1: Variance of normalized log-expression values for each gene in the dataset, plotted against the mean log-expression. The blue line represents represents the mean-variance relationship corresponding to Poisson noise.
+
+```{r}
+#| fig.align: "center"
+#| fig.height: !expr length(sce) * 5
+
+plt <- wrapPlots(sce, plotGeneVarByPoisson, n = 50)
+
+patchwork::wrap_plots(plt, ncol = 1)
+```
+
+```{r}
+#| label: fig-upset
+#| fig-cap: "Highly-variable genes shared across samples"
+
+UpSetR::upset(
+  data = UpSetR::fromList(hvg),
+  mainbar.y.label = "Intersection size",
+  sets.x.label = "Highly-variable genes",
+  order.by = "freq"
+)
+```
+
+## Summary
+
+### Output
+
+This table describes the output files produced by this document.
+
+```{r}
+out <- list(
+  list(
+    File = "output/feature-selection.rds",
+    Description = "A SingleCellExperiment object."
+  )
+)
+
+out <- jsonlite::toJSON(out, pretty = TRUE)
+
+knitr::kable(jsonlite::fromJSON(out))
+```
+
+### Parameters
+
+This table describes parameters used and set in this document.
+
+```{r}
+par <- list(
+  list(
+    Parameter = "n",
+    Value = params$n,
+    Description = "Integer scalar specifying the number of top HVGs to report."
+  )
+)
+
+par <- jsonlite::toJSON(par, pretty = TRUE)
+
+knitr::kable(jsonlite::fromJSON(par))
+```
+
+### Version
+
+This output shows the version information about R, the OS and attached or loaded packages.
 
 ```{r}
 sessionInfo()
