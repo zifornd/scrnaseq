@@ -1,56 +1,109 @@
 ---
-title: "Normalization"
+title: "Single Cell Gene Expression"
+subtitle: "Normalization"
+author: "Zifo RnD Solutions"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+params:
+  downsample: false
+execute:
+  message: false
+  warning: false
+  echo: false
 ---
+
+## Overview
+
+<!-- Include big data parameters -->
 
 ```{r}
 #| child: "analysis/big-data.qmd"
 ```
 
-Load Bioconductor package(s):
+<!-- Load Bioconductor package(s) -->
 
 ```{r}
 library(scran)
 ```
 
-Read experiment object(s):
+<!-- Source utility function(s) -->
+
+```{r}
+source("R/normalization/plotSizeFactors.R")
+source("R/utils/panelTabset.R")
+```
+
+<!-- Read experiment object(s) -->
 
 ```{r}
 sce <- readRDS("output/quality-control.rds")
 ```
 
-Quick clustering of cells:
+<!-- Quick clustering of cells -->
 
 ```{r}
-col <- bplapply(
-    X = sce, 
-    FUN = quickCluster
-)
+col <- bplapply(sce, quickCluster, BPPARAM = BPP)
 ```
 
-Normalization by deconvolution:
+<!-- Normalization by deconvolution -->
 
 ```{r}
-sce <- bpmapply(
-    FUN = computeSumFactors, 
-    x = sce, 
-    clusters = col, 
-    SIMPLIFY = FALSE
-)
+sce <- bpmapply(computeSumFactors, x = sce, clusters = col, SIMPLIFY = FALSE, BPPARAM = BPP)
 ```
 
-Compute log-normalized expression values:
+<!-- Compute log-normalized expression values -->
 
 ```{r}
-sce <- bplapply(sce, logNormCounts)
+sce <- bplapply(sce, logNormCounts, downsample = params$downsample, BPPARAM = BPP)
 ```
 
-Save experiment object(s):
+<!-- Save experiment object(s) -->
 
 ```{r}
 saveRDS(sce, file = "output/normalization.rds")
 ```
 
-Print session information
+## Summary
+
+### Output
+
+This table describes the output files produced by this document.
+
+```{r}
+out <- list(
+  list(
+    File = "output/normalization.rds",
+    Description = "A SingleCellExperiment object."
+  )
+)
+
+out <- jsonlite::toJSON(out, pretty = TRUE)
+
+knitr::kable(jsonlite::fromJSON(out))
+```
+
+### Parameters
+
+This table describes parameters used and set in this document.
+
+```{r}
+par <- list(
+  list(
+    Parameter = "downsample",
+    Value = params$downsample,
+    Description = "Logical scalar indicating whether downsampling should be performed prior to scaling and log-transformation."
+  )
+)
+
+par <- jsonlite::toJSON(par, pretty = TRUE)
+
+knitr::kable(jsonlite::fromJSON(par))
+```
+
+### Version
+
+This output describe the version information about R, the OS and attached or loaded packages.
+
+<!-- Print session information -->
 
 ```{r}
 sessionInfo()
