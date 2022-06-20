@@ -1,0 +1,89 @@
+---
+title: "Stripped nuclei detection"
+author: "Zifo RnD Solutions"
+format: html
+params:
+  # A numeric scalar specifying the MT threshold with which to identify stripped clusters.
+  threshold: 0.005
+---
+
+## Overview
+
+In some experiments, some clusters show particularly low mitochondrial read fractions alongside low library sizes. It has been suggested that these cells represent “stripped nuclei” - cells that have lost their cytoplasm before encapsulation in the droplets of the 10X Chromium machine. These cells cluster differently, likely because the nuclear and cytoplasmic RNA composition is different.
+
+<!-- Load Bioconductor packages -->
+
+```{r}
+library(SingleCellExperiment)
+```
+
+<!-- Source user-defined functions -->
+
+```{r}
+source("R/stripped-detection/findStrippedClusters.R")
+```
+
+<!-- Read experiment objects -->
+
+```{r}
+sce <- readRDS("output/feature-selection.rds")
+```
+
+<!-- Detect stripped nuclei clusters -->
+
+```{r}
+out <- lapply(sce, findStrippedClusters, threshold = 0.05)
+```
+
+<!-- Filter stripped nuclei clusters -->
+
+```{r}
+
+```
+
+<!-- Save experiment objects -->
+
+```{r}
+saveRDS(sce, file = "output/stripped-detection.rds")
+```
+
+
+## Summary
+
+## Output files
+
+```{r}
+
+```
+
+## Document parameters
+
+```{r}
+par <- list(
+  list(
+    Parameter = "nmads",
+    Value = params$nmads,
+    Description = "A numeric scalar, specifying the minimum number of MADs away from median required for a value to be called an outlier."
+  ),
+  list(
+    Parameter = "mito",
+    Value = params$mito,
+    Description = "Mitochondrial gene symbol pattern"
+  ),
+  list(
+    Parameter = "ribo",
+    Value = params$ribo,
+    Description = "Ribosomal gene symbol pattern"
+  )
+)
+
+par <- jsonlite::toJSON(par, pretty = TRUE)
+
+knitr::kable(jsonlite::fromJSON(par))
+```
+
+## Session information
+
+```{r}
+sessionInfo()
+```
