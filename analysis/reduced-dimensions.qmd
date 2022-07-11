@@ -1,5 +1,8 @@
 ---
-title: "Dimensionality reduction"
+title: "Single Cell Gene Expression"
+subtitle: "Dimensionality reduction"
+author: "Zifo RnD Solutions"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
 params:
   ncomponents: 25
   perplexity: 30
@@ -7,6 +10,10 @@ params:
   n_neighbors: 15
   n_epochs: 500
   min_dist: 0.01
+execute:
+  message: false
+  warning: false
+  echo: false
 ---
 
 ## Overview
@@ -132,11 +139,32 @@ saveRDS(sce, file = "output/reduced-dimensions.rds")
 
 ## Output files
 
-```{r}
+<!-- Print output files -->
 
+```{r}
+out <- list(
+  list(
+    File = "",
+    Description = "PCA plot"
+  ),
+  list(
+    File = "",
+    Description = "TSNE plot"
+  ),
+  list(
+    File = "",
+    Description = "UMAP plot"
+  )
+)
+
+out <- jsonlite::toJSON(out, pretty = TRUE)
+
+DT::datatable(jsonlite::fromJSON(out))
 ```
 
 ## Parameter values
+
+<!-- Print parameter values -->
 
 ```{r}
 par <- list(
