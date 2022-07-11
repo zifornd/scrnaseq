@@ -1,135 +1,81 @@
 ---
 title: "Dimensionality reduction"
 params:
-    perplexity: 30
-    max_iter: 500
-    n_neighbors: 15
-    n_epochs: 500
-    min_dist: 0.01
+  ncomponents: 25
+  perplexity: 30
+  max_iter: 500
+  n_neighbors: 15
+  n_epochs: 500
+  min_dist: 0.01
 ---
+
+## Overview
+
+<!-- Include big data settings -->
 
 ```{r}
 #| child: "big-data.qmd"
 ```
 
-Load Bioconductor package(s):
+<!-- Load Bioconductor packages -->
 
 ```{r}
-library(PCAtools)
+library(scater)
 library(scuttle)
 ```
 
-Load CRAN package(s):
+<!-- Load CRAN packages -->
 
 ```{r}
 library(ggplot2)
+library(patchwork)
 ```
 
-Read experiment object(s):
+<!-- Source helper functions -->
+
+```{r}
+source("R/reduced-dimensions/plotPCA.R")
+source("R/reduced-dimensions/plotTSNE.R")
+source("R/reduced-dimensions/plotUMAP.R")
+```
+
+<!-- Read experiment objects -->
 
 ```{r}
 sce <- readRDS("output/feature-selection.rds")
 ```
 
-## Principal components analysis
+## Principal components analysis (PCA)
 
-Extract highly variable genes:
+<!-- Extract highly variable genes -->
 
 ```{r}
 hvg <- lapply(sce, rowSubset, "HVG")
 ```
 
-Perform a principal components analysis (PCA) on cells:
+<!-- Perform PCA on cells -->
 
 ```{r}
 sce <- bpmapply(
   FUN = runPCA,
   x = sce,
+  ncomponents = params$ncomponents,
   subset_row = hvg,
   SIMPLIFY = FALSE
 )
 ```
 
-
-## Elbow Point
-
-```{r}
-FUN <- function(x) {
-  
-  dim <- reducedDim(x, "PCA")
-  
-  var <- attr(dim, "percentVar")
-
-}
-
-out <- lapply(sce, FUN)
-```
-
-Find the elbow point in the curve of variance explained by each successive PC:
+<!-- Plot PCA -->
 
 ```{r}
-num <- lapply(out, findElbowPoint)
+plt <- mapply(plotPCA, x = sce, name = names(sce), SIMPLIFY = FALSE)
+
+wrap_plots(plt, ncol = 2)
 ```
 
-```{r}
-FUN <- function(v, n) {
-  
-  df <- data.frame(component = seq_along(v), variance = v)
+## t-distributed stochastic neighbor embedding (t-SNE)
 
-  ggplot(df, aes(component, variance)) + 
-    geom_point() + 
-    geom_vline(xintercept = n, colour = "#E41A1C") + 
-    scale_y_continuous(labels = label_percent(scale = 1)) + 
-    labs(x = "PC", y = "Variance") + 
-    theme_classic() + 
-    theme(aspect.ratio = 1)
-
-}
-
-plt <- bpmapply(FUN, v = out, n = num, SIMPLIFY = FALSE)
-
-wrap_plots(plt)
-```
-
-
-
-```{r}
-FUN <- function(x, n) {
-  
-  d <- reducedDim(x, "PCA")
-  
-  j <- seq_len(n)
-  
-  d <- d[, j]
-  
-  reducedDim(x, "PCA") <- d
-  
-  x
-
-}
-
-sce <- bpmapply(FUN, x = sce, n = num, SIMPLIFY = FALSE)
-
-```
-
-```{r}
-plotPCA <- function(n) {
-  
-  ggcells(sce[[n]], aes(PCA.1, PCA.2)) + 
-    geom_point() + 
-    coord_fixed() + 
-    labs(x = "PCA 1", y = "PCA 2", title = n) + 
-    theme_no_axes() + 
-    theme(axis.title = element_text())
-  
-}
-
-plt <- lapply(names(sce), plotPCA)
-
-wrap_plots(plt)
-```
-
-## t-stochastic neighbor embedding
+<!-- Perform t-SNE on cells -->
 
 ```{r}
 sce <- bplapply(
@@ -141,24 +87,17 @@ sce <- bplapply(
 )
 ```
 
+<!-- Plot t-SNE -->
+
 ```{r}
-plotTSNE <- function(n) {
-  
-  ggcells(sce[[n]], aes(TSNE.1, TSNE.2)) + 
-    geom_point() + 
-    labs(x = "TSNE 1", y = "TSNE 2", title = n) + 
-    theme_no_axes() + 
-    theme(aspect.ratio = 1) + 
-    theme(axis.title = element_text())
-  
-}
+plt <- mapply(plotTSNE, x = sce, name = names(sce), SIMPLIFY = FALSE)
 
-plt <- lapply(names(sce), plotTSNE)
-
-wrap_plots(plt)
+wrap_plots(plt, ncol = 2)
 ```
 
-## Uniform manifold approximation and projection
+## Uniform Manifold Approximation and Projection for Dimension Reduction (UMAP)
+
+<!-- Perform UMAP on cells -->
 
 ```{r}
 sce <- bplapply(
@@ -171,30 +110,72 @@ sce <- bplapply(
 )
 ```
 
+<!-- Plot UMAP -->
+
 ```{r}
-plotUMAP <- function(n) {
-  
-  ggcells(sce[[n]], aes(UMAP.1, UMAP.2)) + 
-    geom_point() + 
-    labs(x = "UMAP 1", y = "UMAP 2", title = n) + 
-    theme_no_axes() + 
-    theme(aspect.ratio = 1) + 
-    theme(axis.title = element_text())
-  
-}
+plt <- mapply(plotUMAP, x = sce, name = names(sce), SIMPLIFY = FALSE)
 
-plt <- lapply(names(sce), plotUMAP)
-
-wrap_plots(plt)
+wrap_plots(plt, ncol = 2)
 ```
 
-Save experiment object(s):
+<!-- Save experiment objects -->
 
 ```{r}
 saveRDS(sce, file = "output/reduced-dimensions.rds")
 ```
 
-Print session information
+## Summary
+
+## Output files
+
+```{r}
+
+```
+
+## Parameter values
+
+```{r}
+par <- list(
+  list(
+    Parameter = "ncomponents",
+    Value = params$ncomponents,
+    Description = "Numeric scalar indicating the number of principal components to obtain."
+  ),
+  list(
+    Parameter = "perplexity",
+    Value = params$perplexity,
+    Description = "Perplexity parameter."
+  ),
+  list(
+    Parameter = "max_iter",
+    Value = params$max_iter,
+    Description = "Number of iterations."
+  ),
+  list(
+    Parameter = "n_neighbors",
+    Value = params$n_neighbors,
+    Description = "The size of local neighborhood (in terms of number of neighboring sample points) used for manifold approximation."
+  ),
+  list(
+    Parameter = "n_epochs",
+    Value = params$n_epochs,
+    Description = "Number of epochs to use during the optimization of the embedded coordinates."
+  ),
+  list(
+    Parameter = "min_dist",
+    Value = params$min_dist,
+    Description = "The effective minimum distance between embedded points."
+  )
+)
+
+par <- jsonlite::toJSON(par, pretty = TRUE)
+
+DT::datatable(jsonlite::fromJSON(par))
+```
+
+## Session information
+
+<!-- Print session information -->
 
 ```{r}
 sessionInfo()

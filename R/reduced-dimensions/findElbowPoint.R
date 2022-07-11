@@ -1,29 +1,11 @@
-#!/usr/bin/env Rscript
+findElbowPoint <- function(x) {
 
-main <- function(input, output, log) {
+  require(PCAtools)
 
-    # Log function
+  dim <- reducedDim(x, "PCA")
 
-    out <- file(log$out, open = "wt")
+  var <- attr(dim, "percentVar")
 
-    err <- file(log$err, open = "wt")
-
-    sink(out, type = "output")
-
-    sink(err, type = "message")
-
-    # Script function
-
-    library(PCAtools)
-
-    dim <- readRDS(input$rds)
-
-    var <- attr(dim, "percentVar")
-    
-    num <- findElbowPoint(var)
-
-    saveRDS(num, file = output$rds)
+  num <- PCAtools::findElbowPoint(var)
 
 }
-
-main(snakemake@input, snakemake@output, snakemake@log)
