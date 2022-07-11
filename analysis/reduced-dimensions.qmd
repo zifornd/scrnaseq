@@ -57,7 +57,7 @@ sce <- readRDS("output/feature-selection.rds")
 <!-- Extract highly variable genes -->
 
 ```{r}
-hvg <- lapply(sce, rowSubset, "HVG")
+hvg <- bplapply(sce, rowSubset, "HVG")
 ```
 
 <!-- Perform PCA on cells -->
@@ -76,10 +76,15 @@ sce <- bpmapply(
 names(sce) <- ids
 ```
 
-<!-- Plot PCA -->
+<!-- Plot PCA of cells -->
 
 ```{r}
-plt <- mapply(plotPCA, x = sce, name = names(sce), SIMPLIFY = FALSE)
+#| label: fig-pca
+#| fig-cap: PCA
+#| fig-width: 7
+#| fig-height: 7
+
+plt <- bpmapply(plotPCA, x = sce, name = names(sce), SIMPLIFY = FALSE)
 
 wrap_plots(plt, ncol = 2)
 ```
@@ -98,10 +103,15 @@ sce <- bplapply(
 )
 ```
 
-<!-- Plot t-SNE -->
+<!-- Plot t-SNE of cells -->
 
 ```{r}
-plt <- mapply(plotTSNE, x = sce, name = names(sce), SIMPLIFY = FALSE)
+#| label: fig-tsne
+#| fig-cap: TSNE
+#| fig-width: 7
+#| fig-height: 7
+
+plt <- bpmapply(plotTSNE, x = sce, name = names(sce), SIMPLIFY = FALSE)
 
 wrap_plots(plt, ncol = 2)
 ```
@@ -121,10 +131,15 @@ sce <- bplapply(
 )
 ```
 
-<!-- Plot UMAP -->
+<!-- Plot UMAP of cells -->
 
 ```{r}
-plt <- mapply(plotUMAP, x = sce, name = names(sce), SIMPLIFY = FALSE)
+#| label: fig-umap
+#| fig-cap: UMAP
+#| fig-width: 7
+#| fig-height: 7
+
+plt <- bpmapply(plotUMAP, x = sce, name = names(sce), SIMPLIFY = FALSE)
 
 wrap_plots(plt, ncol = 2)
 ```
