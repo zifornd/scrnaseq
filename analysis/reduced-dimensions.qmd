@@ -14,7 +14,7 @@ params:
 <!-- Include big data settings -->
 
 ```{r}
-#| child: "big-data.qmd"
+#| child: "analysis/big-data.qmd"
 ```
 
 <!-- Load Bioconductor packages -->
@@ -56,6 +56,8 @@ hvg <- lapply(sce, rowSubset, "HVG")
 <!-- Perform PCA on cells -->
 
 ```{r}
+ids <- names(sce)
+
 sce <- bpmapply(
   FUN = runPCA,
   x = sce,
@@ -63,6 +65,8 @@ sce <- bpmapply(
   subset_row = hvg,
   SIMPLIFY = FALSE
 )
+
+names(sce) <- ids
 ```
 
 <!-- Plot PCA -->
