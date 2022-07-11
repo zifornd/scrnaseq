@@ -1,44 +1,181 @@
 ---
-title: "Cell cycle assignment"
+title: "Single Cell Gene Expression"
+subtitle: "Cell cycle assignment"
+author: "Zifo RnD Solutions"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
 params:
-    organism: "human"
+  # Possible values include "human" or "mouse"
+  organism: "human"
+execute:
+  message: false
+  warning: false
+  echo: false
 ---
 
-## Motivation
+## Overview
 
-## Dependencies
+<!-- Include big data settings -->
 
-Load Bioconductor package(s):
+```{r}
+#| child: "analysis/big-data.qmd"
+```
+
+<!-- Load Bioconductor packages -->
 
 ```{r}
 library(scran)
 ```
 
-Source functions:
+<!-- Load CRAN packages -->
 
 ```{r}
-source("R/cell-cycle/")
+library(ggplot2)
 ```
 
-Read experiment object(s):
+<!-- Source user-defined functions -->
+
+```{r}
+source("R/cell-cycle/addCyclone.R")
+source("R/cell-cycle/plotCyclone.R")
+source("R/cell-cycle/cycloneTable.R")
+source("R/cell-cycle/plotPCA.R")
+source("R/cell-cycle/plotTSNE.R")
+source("R/cell-cycle/plotUMAP.R")
+```
+
+<!-- Read experiment objects -->
 
 ```{r}
 sce <- readRDS("output/reduced-dimensions.rds")
+
+sce <- lapply(sce, function(x) x[, 1:50])
 ```
 
-Cell cycle phase classification:
+<!-- Cell cycle phase classification -->
 
 ```{r}
-sce <- bplapply(sce, addCellCycle)
+sce <- bplapply(sce, addCyclone, organism = params$organism, BPPARAM = BPP)
 ```
 
-Save experiment object(s):
+<!-- Tabulate cell cycle phase classification -->
+
+The table below summarizes the number of cells per phase, see @tbl-cyclone.
+
+```{r}
+#| label: tbl-cyclone
+#| tbl-cap: "Cell cycle phase classification"
+
+tbl <- cycloneTable(sce)
+
+knitr::kable(tbl)
+```
+
+<!-- Plot cell cycle phase classification -->
+
+The graphs below demonstrate the numeric phase scores for each phase and cell, see @fig-cyclone.
+
+```{r}
+#| label: fig-cyclone
+#| fig-cap: "Cell cycle phase classification"
+#| fig-width: 10
+#| fig-height: 10
+
+plt <- mapply(plotCyclone, x = sce, name = names(sce), SIMPLIFY = FALSE)
+
+patchwork::wrap_plots(plt, ncol = 2)
+```
+
+<!-- Plot reduced dimensions coloured by phase -->
+
+::: {.panel-tabset}
+
+### PCA
+
+```{r}
+#| label: fig-pca
+#| fig-cap: PCA coloured by cell cycle phase
+#| fig-width: 7
+#| fig-height: 7
+
+plt <- mapply(plotPCA, x = sce, name = names(sce), SIMPLIFY = FALSE)
+
+patchwork::wrap_plots(plt, ncol = 1)
+```
+
+### TSNE
+
+```{r}
+#| label: fig-tsne
+#| fig-cap: TSNE coloured by cell cycle phase
+#| fig-width: 7
+#| fig-height: 7
+
+plt <- mapply(plotTSNE, x = sce, name = names(sce), SIMPLIFY = FALSE)
+
+patchwork::wrap_plots(plt, ncol = 1)
+```
+
+### UMAP
+
+```{r}
+#| label: fig-umap
+#| fig-cap: UMAP coloured by cell cycle phase
+#| fig-width: 7
+#| fig-height: 7
+
+plt <- mapply(plotUMAP, x = sce, name = names(sce), SIMPLIFY = FALSE)
+
+patchwork::wrap_plots(plt, ncol = 1)
+```
+
+:::
+
+<!-- Save experiment objects -->
 
 ```{r}
 saveRDS(sce, file = "cell-cycle.rds")
 ```
 
-Print session information:
+## Summary
+
+### Output
+
+<!-- Print output files -->
+
+```{r}
+out <- list(
+  list(
+    File = "cell-cycle.rds",
+    Description = "SingleCellExperiment object"
+  )
+)
+
+out <- jsonlite::toJSON(out, pretty = TRUE)
+
+knitr::kable(jsonlite::fromJSON(out))
+```
+
+### Parameters
+
+<!-- Print parameter values -->
+
+```{r}
+par <- list(
+  list(
+    Parameter = "organism",
+    Value = params$organism,
+    Description = "Model organism. Possible values include 'human' or 'mouse'."
+  )
+)
+
+par <- jsonlite::toJSON(par, pretty = TRUE)
+
+knitr::kable(jsonlite::fromJSON(par))
+```
+
+### Session
+
+<!-- Print session information -->
 
 ```{r}
 sessionInfo()
